@@ -5174,7 +5174,7 @@ Second line here
   // Treat these as a soft gate to deter casual tire-kickers, not an
   // access-control mechanism. Rotate them for your deployment.
   const AUTH_USER = 'PAW';
-  const AUTH_PASS = 'worship2026';
+  const AUTH_PASS = '1234';
   const AUTH_KEY  = 'playandworship.auth.v1';
   // Magic-link secret — append `?k=<this>` to the URL to skip the login
   // gate. Kept separate from the password so the password itself never
