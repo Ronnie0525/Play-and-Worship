@@ -5093,7 +5093,7 @@ body.no-loader .login-gate { display: none; }
   text-transform: uppercase;
 }
 .ez-field input[type=text] {
-  background: #fff;
+  background: var(--panel-2);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 9px 12px;
@@ -5142,7 +5142,7 @@ body.no-loader .login-gate { display: none; }
 }
 .ann-row-title {
   flex: 1;
-  background: #fff;
+  background: var(--panel-2);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 8px 10px;
@@ -5156,7 +5156,7 @@ body.no-loader .login-gate { display: none; }
   box-shadow: 0 0 0 2px rgba(31,122,201,0.18);
 }
 .ann-row-message {
-  background: #fff;
+  background: var(--panel-2);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 9px 11px;
@@ -5220,7 +5220,7 @@ body.no-loader .login-gate { display: none; }
   min-width: 0;
 }
 .bday-row-fields input[type=text] {
-  background: #fff;
+  background: var(--panel-2);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 8px 10px;

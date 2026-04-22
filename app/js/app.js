@@ -5169,14 +5169,17 @@ Second line here
   window.App = App;
   let _booted = false;
 
-  // Hardcoded operator credentials (client-side gate, not real security).
+  // Hardcoded operator credentials (client-side gate, not real security —
+  // source is visible in the browser, and git history retains prior values).
+  // Treat these as a soft gate to deter casual tire-kickers, not an
+  // access-control mechanism. Rotate them for your deployment.
   const AUTH_USER = 'PAW';
-  const AUTH_PASS = '1234';
+  const AUTH_PASS = 'worship2026';
   const AUTH_KEY  = 'playandworship.auth.v1';
   // Magic-link secret — append `?k=<this>` to the URL to skip the login
   // gate. Kept separate from the password so the password itself never
-  // appears in a shared URL. Change this before publishing.
-  const AUTH_LINK = 'paw-invite-2026';
+  // appears in a shared URL. Rotate on each deployment.
+  const AUTH_LINK = 'paw-invite-2026-kR9mX2';
 
   // Run the branded splash, then reveal the app.
   const _showSplash = () => {

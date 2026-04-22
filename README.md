@@ -1,10 +1,10 @@
-# EZ Worship
+# Play & Worship
 
 A browser-based worship presentation app modeled on EasyWorship's operator layout. No backend, no install, no build step. Open `index.html` and go.
 
 ## Running
 
-1. Open `index.html` in Chrome, Edge, or any Chromium-based browser (Firefox and Safari also work).
+1. Open the root `index.html` for the landing page, or open `app/index.html` directly for the operator console. Works in Chrome, Edge, or any Chromium-based browser (Firefox and Safari also work).
 2. Click **Live Output** in the toolbar — a second window opens. Drag it to the projector display and press `F` or `F11` to go fullscreen.
 3. Build your schedule, hit **Go Live** (or Space).
 
@@ -96,19 +96,32 @@ When the projector sends `ready`, the main window re-sends state — so reloadin
 ## Files
 
 ```
-ez-worship/
-├── index.html            ← operator shell
-├── projector.html        ← output window (inline script, short)
-├── css/
-│   ├── app.css           ← operator UI
-│   └── projector.css     ← output styles
-├── js/
-│   ├── store.js          ← localStorage + song/slide helpers
-│   ├── bible.js          ← 66 books + translations + fetcher + ref parser
-│   ├── pptx.js           ← JSZip parser + canvas renderer
-│   ├── projector.js      ← output-window controller
-│   └── app.js            ← single App object, all operator logic
-└── README.md
+Play and Worship/
+├── index.html                ← marketing / landing page
+├── README.md
+├── assets/
+│   ├── BRAND.md
+│   ├── logo.svg              ← web logo (full badge)
+│   ├── logo-illustrator.svg  ← editable master for Illustrator
+│   ├── logo-mark-dark.svg    ← mark only, myrtle (for light bg)
+│   ├── logo-mark-gold.svg    ← mark only, antique gold (neutral)
+│   ├── logo-mark-white.svg   ← mark only, white (for dark bg)
+│   └── rworship-brand-kit.zip
+└── app/
+    ├── index.html            ← operator shell
+    ├── projector.html        ← output window (inline script, short)
+    ├── css/
+    │   ├── app.css           ← operator UI
+    │   └── projector.css     ← output styles
+    └── js/
+        ├── app.js            ← single App object, all operator logic
+        ├── bible.js          ← 66 books + translations + fetcher + ref parser
+        ├── mediaStore.js     ← IndexedDB-backed media blob store
+        ├── pdf.js            ← PDF.js loader + per-page renderer
+        ├── pptx.js           ← JSZip parser + canvas renderer
+        ├── projector.js      ← output-window controller
+        ├── store.js          ← localStorage + song/slide helpers
+        └── video.js          ← video slide helpers
 ```
 
 ## Content policy
