@@ -400,16 +400,46 @@
         added += v4.length;
       }
 
-      // -------- V5: Tagalog worship scaffolds (Hope Filipino,
-      // Victory Worship, popular PH translations). V6 re-seeds the
-      // same IDs with full best-effort lyrics — [VERIFY] markers flag
-      // sections that need operator review before live use.
-      if (!settings.seededStarterV5 || !settings.seededStarterV6) {
-        const v5 = this._v5Seeds(sng);
-        Store.mergeSongs(v5);
-        Store.setSetting('seededStarterV5', true);
-        Store.setSetting('seededStarterV6', true);
-        added += v5.length;
+      // V5 Tagalog seeds (old auto-generated scaffolds) removed —
+      // operator-curated Tagalog songs now live in V7 instead.
+
+      // -------- V7: Operator-curated Tagalog worship --------
+      if (!settings.seededStarterV7) {
+        const v7 = this._v7Seeds(sng);
+        Store.mergeSongs(v7);
+        Store.setSetting('seededStarterV7', true);
+        added += v7.length;
+      }
+
+      // One-time lyric refresh for Endless Praise. We updated the seed
+      // wording but can't just re-run V2 (that would overwrite other user
+      // edits), so patch only this one song once per install.
+      if (!settings.refreshedEndlessPraiseV2) {
+        const ep = Store.getSong('seed_ps_endless_praise');
+        if (ep) {
+          const fresh = this._v2Seeds(sng).find(x => x.id === 'seed_ps_endless_praise');
+          if (fresh) {
+            ep.sections = fresh.sections;
+            Store.saveSong(ep);
+          }
+        }
+        Store.setSetting('refreshedEndlessPraiseV2', true);
+      }
+
+      // One-time cleanup for users who already had the old V5 Tagalog
+      // seeds in their library. Runs once per install, then never again,
+      // so operator-created Tagalog songs (without the seed_tl_ prefix) are
+      // never touched.
+      if (!settings.purgedTagalogSeedsV1) {
+        const before = Store.getSongs().length;
+        Store.getSongs()
+          .filter(s => s && typeof s.id === 'string' && s.id.startsWith('seed_tl_'))
+          .forEach(s => Store.deleteSong(s.id));
+        const removed = before - Store.getSongs().length;
+        Store.setSetting('purgedTagalogSeedsV1', true);
+        if (removed > 0) {
+          setTimeout(() => toast(`Cleaned up ${removed} old Tagalog seed song${removed === 1 ? '' : 's'}`, 'info'), 600);
+        }
       }
 
       if (added > 0) {
@@ -492,10 +522,16 @@
         ]),
 
         sng('seed_ps_endless_praise', 'Endless Praise', 'Planetshakers', 'G', '6426842', 'worship', [
-          { label: 'Verse 1', text: 'Here we are, standing in Your presence\nHere we are, living for You Lord\nWe are Your generation\nSinging for Your glory' },
-          { label: 'Chorus',  text: 'We will sing endless hallelujahs\nTo the One we love\nWe will sing endless hallelujahs\nAll creation sings Your praise' },
-          { label: 'Verse 2', text: 'Here we are with hearts wide open\nHere we are longing for You Lord\nThis is a new beginning\nNow the future’s calling' },
-          { label: 'Bridge',  text: 'Jesus, name above every other name\nJesus, You’re our hope and salvation\nWe sing praise, forever we raise\nA shout of victory to our King' },
+          { label: 'Verse 1', text: 'Oh, You are God, and we lift You up\nWeʼll keep singing, Weʼll keep praising\nWe wonʼt stop, giving all we got\nCause You\'re worthy, Of all glory' },
+          { label: 'Pre-Chorus', text: 'And oh, there is no other\nYou are forever, Lord over all\nThere\'s nobody like You, no one beside You' },
+          { label: 'Chorus', text: 'To You, let endless praise resound\nEvery night and day, and with no delay\nLet endless praise resound, yeah' },
+          { label: 'Verse 2', text: 'Boundless love, light before the sun\nYour glory eternal\nNever stops\nGiving all you got\nCreation keeps singing' },
+          { label: 'Chorus', text: 'Oh, there is no other\nYou are forever, Lord over all\nThere\'s nobody like You, No one beside You' },
+          { label: 'Chorus', text: 'To You let endless praise resound\nEvery night and day, and with no delay\nLet endless praise resound\nTo You let endless praise resound (Oh)\nEvery night and day, and with no delay\nLet endless praise resound' },
+          { label: 'Build-up', text: 'Early in the morning, early in the evening\nGonna give You praise' },
+          { label: 'Bridge', text: 'We lift You up, up, up\nWeʼre giving You our love, love, love\nFor everything Youʼve done, done, done\nWe give you all the praise\nWe lift You up, up, up\nWeʼre giving You our love, love, love\nFor everything Youʼve done, done, done\nWe give you all the praise' },
+          { label: 'Chorus', text: 'To You, oh, Lord, let endless praise resound\nEvery night and day, and with no delay\nLet endless praise resound\nTo You, let endless praise resound\nEvery night and day, and with no delay\nLet endless praise resound, yeah, yeah' },
+          { label: 'Outro', text: 'Oh, Lord' },
         ]),
 
         sng('seed_ps_nothing_is_impossible', 'Nothing Is Impossible', 'Planetshakers', 'D', '5928569', 'worship', [
@@ -891,11 +927,12 @@
       ];
     },
 
-    _v5Seeds(sng) {
-      // Tagalog worship — best-effort full lyrics. Sections marked with
-      // [VERIFY] contain my approximation and need operator review against
-      // a trusted lyric source (CCLI songsheet, church's authorized chord
-      // chart, official Victory / Hope Filipino releases) before live use.
+    // Operator-curated Tagalog worship songs. Each has a `paw_tl_*` id so
+    // it can never collide with the old auto-generated `seed_tl_*` scaffolds
+    // (which were purged). Add new songs to this array — once committed,
+    // every fresh install ships with them (and existing installs pick them
+    // up on next reload via the seededStarterV7 gate).
+    _v7Seeds(sng) {
       const tl = (id, title, author, key, ccli, category, sections) => {
         const s = sng(id, title, author, key, ccli, category, sections);
         s.language = 'tl';
@@ -903,114 +940,128 @@
       };
 
       return [
-        // ================ Original Tagalog worship ================
-
-        tl('seed_tl_tagumpay', 'Tagumpay Na Nakamtan', 'Victory Worship', '', '5963099', 'worship', [
-          { label: 'Verse 1', text: 'Kay hirap isiping Iyong dinanas\nPanginoon ko\nLahat ng kasalanan ko’y\nIyong dinala sa krus' },
-          { label: 'Chorus',  text: 'Tagumpay na nakamtan\nSa Iyong kamatayan\nAng buhay na walang hanggan\nSa amin Panginoon' },
-          { label: 'Verse 2 [VERIFY]', text: 'Kay sarap isiping Ikaw ay nabuhay\nAt ngayon, Panginoon\nNasa kaluwalhatian ng Ama\nSa amin Panginoon' },
-          { label: 'Bridge [VERIFY]',  text: 'Ikaw lamang Panginoon\nAng tanging Diyos ko\nSa ’Yo lamang sasamba\nAng buhay ko' },
+        tl('paw_tl_banal_mong_tahanan', 'Banal Mong Tahanan', 'Hannah Abogado', '', '', 'worship', [
+          { label: 'Verse', text: 'Ang puso ko\'y dinudulog sa \'Yo\nNagpapakumbaba, nagsusumamo\nPagindapatin Mong Ikaw ay mamasdan\nMakaniig Ka at sa \'Yo ay pumisan\nAng puso ko\'y dinudulog sa \'Yo\nNagpapakumbaba, nagsusumamo\nPagindapatin Mong Ikaw ay mamasdan\nMakaniig Ka at sa \'Yo ay pumisan' },
+          { label: 'Chorus', text: 'Loobin Mong ang buhay ko\'y maging banal Mong tahanan\nLuklukan ng Iyong wagas na pagsinta\nDaluyan ng walang-hanggang mga papuri\'t pagsamba\nMaghari Ka, O Diyos, ngayon at kailanman' },
+          { label: 'Verse', text: 'Ang puso ko\'y dinudulog sa \'Yo\nNagpapakumbaba, nagsusumamo\nPagindapatin Mong Ikaw ay mamasdan\nMakaniig Ka at sa \'Yo ay pumisan' },
+          { label: 'Chorus', text: 'Loobin Mong ang buhay ko\'y maging banal Mong tahanan\nLuklukan ng Iyong wagas na pagsinta\nDaluyan ng walang-hanggang mga papuri\'t pagsamba\nMaghari Ka, O Diyos, ngayon at kailanman\nMaghari Ka, O Diyos, ngayon at kailanman\nMaghari Ka, O Diyos, ngayon at kailanman' },
         ]),
 
-        tl('seed_tl_tatalima_ako', 'Tatalima Ako', 'Hope Filipino', '', '', 'worship', [
-          { label: 'Verse 1 [VERIFY]', text: 'Narinig ko ang Iyong tawag\nAking Panginoon\nNarito ako, handa akong\nSumunod sa ’Yo' },
-          { label: 'Chorus',  text: 'Tatalima ako sa ’Yong tawag\nPanginoon\nKahit saan man dalhin Mo\nAko’y susunod' },
-          { label: 'Verse 2 [VERIFY]', text: 'Buhay ko’y bigay sa ’Yo\nWalang itinatago\nPuso ko’y Iyong gabayan\nSa bawat hakbang' },
-          { label: 'Bridge [VERIFY]',  text: 'Susundan Kita, susundan Kita\nKahit saan Mo ako dalhin\nSusundan Kita, susundan Kita\nAking Panginoon' },
+        tl('paw_tl_diyos_ka_sa_amin', 'Diyos Ka sa Amin', 'Hope Filipino Worship', '', '', 'worship', [
+          { label: 'Verse 1', text: 'O Diyos, Ikaw ang tunay na dakila sa mundo\nIkaw ang Haring nagmahal ng tulad ko\nGinawa Mo\'ng lahat, pag-ibig Mo ay tapat at wagas' },
+          { label: 'Verse 2', text: 'O Diyos, wala nang papantay sa kabutihan Mo\nAng ngalan Mo\'y itataas sa buhay ko\nSundin ang loob Mo, iparinig ang nais Mo' },
+          { label: 'Chorus', text: 'Sa lahat ng panahon, Diyos Ka sa amin\nSa lahat ng oras, nariyan para sa \'min\nPanginoong Hesus, purihin Ka\nDakilain Ka sa buhay ko, aming Ama' },
+          { label: 'Verse 3', text: 'O Diyos, Ikaw ang tunay na dakila sa mundo\nIkaw ang Haring nagmahal ng tulad ko\nSundin ang loob Mo, iparinig ang nais Mo' },
+          { label: 'Chorus', text: 'Sa lahat ng panahon, Diyos Ka sa amin\nSa lahat ng oras, nariyan para sa \'min\nPanginoong Hesus, purihin Ka\nDakilain Ka sa buhay ko\nSa lahat ng panahon, Diyos Ka sa amin\nSa lahat ng oras, nariyan para sa \'min\nPanginoong Hesus, purihin Ka\nDakilain Ka sa buhay ko, aming Ama' },
+          { label: 'Chorus', text: 'Sa lahat ng panahon, Diyos Ka sa amin\nSa lahat ng oras, nariyan para sa \'min\nPanginoong Hesus, purihin Ka\nDakilain Ka sa buhay ko\n\'Di nagbabago, Diyos Ka sa amin\nTanging sandigan, nariyan para sa \'min\nPanginoong Hesus, maghari Ka\nMagliwanag Ka sa buhay ko, aming Ama' },
         ]),
 
-        tl('seed_tl_huwag_kang_mangamba', 'Huwag Kang Mangamba', 'Hope Filipino', '', '', 'worship', [
-          { label: 'Verse 1 [VERIFY]', text: 'Sa gitna ng unos at bagyo\nAng Diyos ay iyong kasama\nHindi Niya pababayaan\nAng Kanyang anak' },
-          { label: 'Chorus',  text: 'Huwag kang mangamba\nAng Diyos ay sumasaiyo\nSiya ang iyong kalasag\nSa bawat laban sa buhay' },
-          { label: 'Verse 2 [VERIFY]', text: 'Sa bawat pagdurusa\nAng Diyos ang tanging sandalan\nMatibay Siyang kanlungan\nSa oras ng kagipitan' },
-          { label: 'Bridge [VERIFY]',  text: 'Sumasaiyo, sumasaiyo\nAng Diyos ay sumasaiyo\nHuwag kang mangamba\nAng Diyos ay kasama mo' },
+        tl('paw_tl_pupurihin_ka_sa_awit', 'Pupurihin Ka sa Awit', 'Musikatha', '', '', 'worship', [
+          { label: 'Verse', text: 'Walang-hanggang katapatan\nSa buhay ko\'y lagi Mong laan\nNarito dahil sa biyaya Mo\nHabang-buhay magpupuri sa \'Yo' },
+          { label: 'Chorus', text: 'Pupurihin Ka sa awit, itataas ang aking tinig\nItatanghal sa buhay ko\'y tanging Ikaw, O Diyos\nHigit pa sa kalangitan ang Iyong kaluwalhatian\nKadakilaan Mo\'y \'di mapapantayan' },
+          { label: 'Verse', text: 'Walang-hanggang katapatan\nSa buhay ko\'y lagi Mong laan\nNarito dahil sa biyaya Mo\nHabang-buhay magpupuri sa \'Yo' },
+          { label: 'Chorus', text: 'Pupurihin Ka sa awit, itataas ang aking tinig\nItatanghal sa buhay ko\'y tanging Ikaw, O Diyos\nHigit pa sa kalangitan ang Iyong kaluwalhatian\nKadakilaan Mo\'y \'di mapapantayan' },
+          { label: 'Bridge', text: 'Hesus, sa \'Yo ang kapurihan\nKaluwalhatian ngayon at magpakailanman\nHesus, sa \'Yo ang karangalan\nKapangyarihan ngayon at magpakailanman' },
+          { label: 'Chorus', text: 'Pupurihin Ka sa awit (Pupurihin), itataas ang aking tinig\nItatanghal sa buhay ko\'y tanging Ikaw, O Diyos\nHigit pa sa kalangitan ang Iyong kaluwalhatian\nKadakilaan Mo\'y \'di mapapantayan' },
+          { label: 'Interlude', text: 'O Hesus\nSama-sama Ka naming niluluwalhati\'t pinupuri, O Diyos' },
+          { label: 'Chorus', text: 'Pupurihin Ka sa awit (Pupurihin), itataas ang aking tinig (Itataas)\nItatanghal sa buhay ko\'y tanging Ikaw, O Diyos\nHigit pa sa kalangitan ang Iyong kaluwalhatian\nKadakilaan Mo\'y \'di mapapantayan, Hesus' },
+          { label: 'Interlude', text: 'Sa \'Yo ang karangalan, kapurihan\nKaluwalhatian, kapangyarihan\nO Hesus, sa \'Yo\nIka\'y karapat-dapat sa aming papuri, O Hesus\nLuwalhati sa \'Yo\nPanginoon, sa \'Yo kami nag-aalay\nNg pinakamataas na papuri\'t pagsamba\nTanggapin mo, O Diyos' },
+          { label: 'Bridge', text: 'Hesus, sa \'Yo ang kapurihan\nKaluwalhatian ngayon at magpakailanman\nHesus, sa \'Yo ang karangalan (Ang karangalan)\nKapangyarihan ngayon (O sa \'Yo) at magpakailanman' },
+          { label: 'Chorus', text: 'Pupurihin Ka sa awit, itataas ang aking tinig\nItatanghal sa buhay ko\'y tanging Ikaw, O Diyos (Tanging Ikaw)\nHigit pa sa kalangitan ang Iyong kaluwalhatian (Higit pa sa lahat ng bagay)\nKadakilaan Mo\'y \'di mapapantayan (Ang Iyong kadakilaa\'y walang kapantay)\nO Hesus, O Hesus' },
+          { label: 'Outro', text: 'Purihin Ka, O Diyos\nLuwalhati\'t pagsamba sa \'Yo\nHallelujah' },
         ]),
 
-        tl('seed_tl_araw_araw', 'Araw-Araw', 'Victory Worship', '', '', 'worship', [
-          { label: 'Verse 1 [VERIFY]', text: 'Sa bawat sandali ng buhay ko\nPag-ibig Mo’y sumasaakin\nAno mang mangyari\nIkaw ang aking tanging Diyos' },
-          { label: 'Chorus',  text: 'Araw-araw, hanggang wakas\nAng pag-ibig Mo’y laging tapat\nAraw-araw, nag-uumapaw\nAng biyayang galing sa ’Yo' },
-          { label: 'Verse 2 [VERIFY]', text: 'Salamat sa lahat ng ’Yong kabutihan\nHindi ko kayang sukliin\nAng pagmamahal Mong walang hanggan\nSa aki’y laging sagana' },
-          { label: 'Bridge [VERIFY]',  text: 'Ikaw lamang aking Panginoon\nIkaw lamang aking Diyos\nSa buong buhay ko\nAraw-araw sasamba ako' },
+        tl('paw_tl_walang_hanggang_sasambahin', 'Walang Hanggang Sasambahin', 'Faithmusic Manila', '', '', 'worship', [
+          { label: 'Verse 1', text: 'Nais kong Ika’y maranasan\nPagkilos Mo’y aking inaasam\nPagkat sa Iyo ko lang natagpuan\nAng tunay na kagalakan' },
+          { label: 'Verse 2', text: 'Nais kong Ika’y maranasan\nTibok ng puso ko’y Ikaw lamang\nKaya’t ngayon, bukas at kailanman\nPagsamba ko’y iaalay' },
+          { label: 'Chorus', text: 'Walang hanggang Kitang pupurihin\nWalang hanggang sasambahin\nBuong laman ng puso kong ito\nAy mamalagi Sa’yo' },
+          { label: 'Chorus', text: 'Walang hanggang Kitang pupurihin\nWalang hanggang sasambahin\nBuong laman ng puso kong ito\nAy mamalagi Sa’yo' },
         ]),
 
-        tl('seed_tl_ikaw_ang_diyos', 'Ikaw Ang Diyos', 'Victory Worship', '', '', 'worship', [
-          { label: 'Verse 1 [VERIFY]', text: 'Sa lahat ng pagkakataon\nIka’y kasama ko\nSa tuwa at kalungkutan\nIkaw ang tanging Diyos' },
-          { label: 'Chorus',  text: 'Ikaw ang Diyos\nWalang tulad sa ’Yo\nIkaw ang Diyos\nPanginoon ko' },
-          { label: 'Verse 2 [VERIFY]', text: 'Puso kong pinupuri Ka\nO Diyos na buhay\nBanal, banal ang pangalan Mo\nSa lahat ng sulok ng mundo' },
-          { label: 'Bridge [VERIFY]',  text: 'Sa ’Yo lamang sasamba\nSa ’Yo lamang ang puri\nSa ’Yo lamang aking Diyos\nAng buhay ko' },
+        tl('paw_tl_lilim', 'Lilim (In Your Shelter)', 'Victory Worship', '', '', 'worship', [
+          { label: 'Verse 1', text: 'Panginoon, ang nais ko\nKagandahan Mo ay pagmasdan\nAng pag-ibig Mo sa \'ki\'y tugon\nKailanma\'y \'di pababayaan' },
+          { label: 'Pre-Chorus', text: 'Sa Iyo lamang matatagpuan\nSa Iyo lamang' },
+          { label: 'Chorus', text: 'Mananatili sa Iyong lilim\nAt sasambahin Ka sa dakong lihim\nMananatili sa Iyong lilim\nNang masumpungan Ka sa dakong lihim' },
+          { label: 'Verse 2', text: 'Panginoon, ang ngalan Mo\nAy kalinga at sandigan ko\n\'Di nagbabago pangako Mo\nSalita Mo\'y panghahawakan' },
+          { label: 'Pre-Chorus', text: 'Sa Iyo lamang matatagpuan\nSa Iyo lamang' },
+          { label: 'Chorus', text: 'Mananatili sa Iyong lilim\nAt sasambahin Ka sa dakong lihim\nMananatili sa Iyong lilim\nNang masumpungan Ka sa dakong lihim\nMananatili sa Iyong lilim\nAt sasambahin Ka sa dakong lihim\nMananatili sa Iyong lilim\nNang masumpungan Ka sa dakong lihim' },
+          { label: 'Bridge', text: 'Ang pagpuri ko ay tanging sa \'Yo\nSa \'Yo lamang iniaalay\nO Panginoon, ang puso ko\nSa \'Yo magpakailanman\nAng pagpuri ko ay tanging sa \'Yo\nSa \'Yo lamang iniaalay\nO Panginoon, ang puso ko\nSa \'Yo magpakailanman' },
+          { label: 'Chorus', text: 'Mananatili sa Iyong lilim\nAt sasambahin Ka sa dakong lihim\nMananatili sa Iyong lilim\nNang masumpungan Ka sa dakong lihim\nMananatili sa Iyong lilim\nAt sasambahin Ka sa dakong lihim\nMananatili sa Iyong lilim\nNang masumpungan Ka sa dakong lihim' },
         ]),
 
-        tl('seed_tl_sayo_lamang', 'Sa’Yo Lamang', 'Victory Worship', '', '', 'worship', [
-          { label: 'Verse 1 [VERIFY]', text: 'Sa ’Yo lamang aking Panginoon\nSusuko ang lahat sa akin\nAng buhay ko ay sa ’Yo\nWalang hanggan' },
-          { label: 'Chorus',  text: 'Sa ’Yo lamang aking Panginoon\nSasamba ang buhay ko\nSa ’Yo lamang, sa ’Yo lamang\nMabubuhay ako' },
-          { label: 'Verse 2 [VERIFY]', text: 'Ako’y sa ’Yo, Ikaw ay sa akin\nWalang-hanggan\nAng pag-ibig ko sa ’Yo\nAking Diyos' },
-          { label: 'Bridge [VERIFY]',  text: 'Ikaw lamang ang aking tanging hiling\nIkaw lamang ang aking tanging nais\nSa ’Yo lamang, sa ’Yo lamang\nAking Panginoon' },
+        tl('paw_tl_maghari', 'Maghari', 'Victory Worship', '', '', 'worship', [
+          { label: 'Verse', text: 'Sa gitna ng kaguluhan, ang tinig Mo ay hanap\nSa templo Mong banal, may bagong kagalakan\nAng tanging mananatili ay ang Iyong sinabi\nSa kataas-taasan, Ikaw pa rin ang Hari' },
+          { label: 'Chorus', text: 'Dakila at kailanma\'y \'di mahihigitan\nAng ngalan Mo ay kaligtasan ko\nAng Iyong kaharian ang aking adhika\nO Diyos, dalangin ko\'y maghari Ka' },
+          { label: 'Verse', text: 'Sa gitna ng kaguluhan, ang tinig Mo ay hanap\nSa templo Mong banal, may bagong kagalakan\nAng tanging mananatili ay ang Iyong sinabi\n(Sa kataas-taasan) Sa kataas-taasan, Ikaw pa rin ang Hari' },
+          { label: 'Chorus', text: 'Dakila at kailanma\'y \'di mahihigitan\nAng ngalan Mo ay kaligtasan ko\nAng Iyong kaharian ang aking adhika\nO Diyos, dalangin ko\'y maghari Ka, oh' },
+          { label: 'Bridge', text: 'Sundin ang loob Mo dito sa lupa, tulad ng sa langit\nSa \'Yo ang kaharian, kapangyarihan, at kaluwalhatian\nSundin ang loob Mo dito sa lupa, tulad ng sa langit\nSa \'Yo ang kaharian, kapangyarihan, at kaluwalhatian' },
+          { label: 'Chorus', text: 'Dakila at kailanma\'y \'di mahihigitan\nAng ngalan Mo ay kaligtasan ko\nAng Iyong kaharian ang aking adhika\nO Diyos, dalangin ko\'y maghari Ka\nDakila at kailanma\'y \'di mahihigitan\nAng ngalan Mo ay kaligtasan ko\nAng Iyong kaharian ang aking adhika\nO Diyos, dalangin ko\'y maghari Ka' },
+          { label: 'Interlude', text: 'Maghari Ka' },
+          { label: 'Chorus', text: 'Dakila at kailanma\'y \'di mahihigitan\nAng ngalan Mo ay kaligtasan ko\nAng Iyong kaharian ang aking adhika\nO Diyos, dalangin ko\'y maghari Ka\n(Sino ang makapangyarihan? Sino ang dakila? Awitin natin)\nDakila at kailanma\'y \'di mahihigitan\nAng ngalan Mo ay kaligtasan ko\n(Ang Iyong kaharian)\nAng Iyong kaharian ang aking adhika\nO Diyos, dalangin ko\'y maghari Ka\n(Sabay-sabay, "Sundin ang loob Mo")' },
         ]),
 
-        tl('seed_tl_diyos_ng_bansa', 'Diyos ng mga Bansa', '', '', '', 'worship', [
-          { label: 'Verse 1 [VERIFY]', text: 'Isang Diyos ang ating sinasamba\nIsang Panginoon ng langit at lupa\nSa ’Yo tayong lahat nagkakaisa\nAng mga bansa ay sa ’Yo' },
-          { label: 'Chorus',  text: 'Diyos ng mga bansa\nDiyos ng lahat ng tao\nItaas ang Iyong pangalan\nSa bawat sulok ng mundo' },
-          { label: 'Verse 2 [VERIFY]', text: 'Bawat lahi’t bawat wika\nLuluhod sa harapan Mo\nSasabihing Ikaw ang Panginoon\nHari ng mga hari' },
+        tl('paw_tl_dakilang_pag_ibig', 'Dakilang Pag-ibig', 'Victory Worship', '', '', 'worship', [
+          { label: 'Verse 1', text: 'Ako\'y Iyong natagpuan\nSa gitna ng aking kasawian\nNiligtas sa kamatayan\nInakay sa liwanag ng \'Yong pagmamahal' },
+          { label: 'Verse 2', text: 'Pinalaya ng Iyong habag\nSa dilim at sa \'king pagkabulag\nNgayon, sa \'Yong biyaya at sa lalim ng pag-ibig\nUmaawit' },
+          { label: 'Chorus', text: 'Ang buhay ko\'y tanging sa \'Yo\nLaging sa \'Yo iaalay\nAng puso ko\'y tanging sa \'Yo\nLaging sa \'Yo, Panginoon' },
+          { label: 'Verse 3', text: 'Walang ibang kaligtasan\nSa \'Yo, lubos ang kagalingan\nHesus, ako\'y nabihag sa dakila Mong pag-ibig\nUmaawit' },
+          { label: 'Chorus', text: 'Ang buhay ko\'y tanging sa \'Yo\nLaging sa \'Yo iaalay\nAng puso ko\'y tanging sa \'Yo\nLaging sa \'Yo, Panginoon\nAng buhay ko\'y tanging sa \'Yo\nLaging sa \'Yo iaalay\nAng puso ko\'y tanging sa \'Yo\nLaging sa \'Yo, Panginoon' },
         ]),
 
-        tl('seed_tl_purihin_ang_diyos', 'Purihin Ang Diyos', '', '', '', 'worship', [
-          { label: 'Verse 1 [VERIFY]', text: 'Purihin ang Diyos\nHari ng lahat\nSiya’y dakila\nAt walang hanggan' },
-          { label: 'Chorus',  text: 'Purihin ang Diyos\nHari ng lahat\nAng Iyong ngalan ay dakila\nSa lahat ng panahon' },
-          { label: 'Verse 2 [VERIFY]', text: 'Pupurihin Ka ng buong puso\nPupurihin Ka ng buong kaluluwa\nDakila Ka sa lahat\nAking Diyos at Panginoon' },
+        tl('paw_tl_dakilang_katapatan', 'Dakilang Katapatan', 'PAPURI! & Victory Worship', '', '', 'worship', [
+          { label: 'Verse 1', text: 'Sadyang kay buti ng ating Panginoon\nMagtatapat sa habang panahon\nMaging sa kabila ng ating pagkukulang\nBiyaya Niya\'y patuloy na laan' },
+          { label: 'Verse 2', text: 'Katulad ng pagsinag ng gintong araw\nPatuloy Siyang nagbibigay tanglaw\nKaya sa puso ko\'t damdamin\nKatapatan Niya\'y aking pupurihin' },
+          { label: 'Chorus', text: 'Dakila Ka, O Diyos, tapat Ka ngang tunay\nMagmula pa sa ugat ng aming lahi\nMundo\'y magunaw man, maaasahan Kang lagi\nMaging hanggang wakas nitong buhay' },
+          { label: 'Verse 3', text: 'Kaya, O Diyos, Ika\'y aking pupurihin\nSa buong mundo\'y aking aawitin\nDakila ang Iyong katapatan\nPag-ibig Mo\'y walang-hanggan' },
+          { label: 'Chorus', text: 'Dakila Ka, O Diyos, tapat Ka ngang tunay\nMagmula pa sa ugat ng aming lahi\nMundo\'y magunaw man, maaasahan Kang lagi\nMaging hanggang wakas nitong buhay\nDakila Ka, O Diyos, tapat Ka ngang tunay\nMagmula pa sa ugat ng aming lahi\nMundo\'y magunaw man, maaasahan Kang lagi\nMaging hanggang wakas nitong buhay' },
+          { label: 'Interlude', text: 'Dakila\nDakila Ka, O Diyos\nWoah-oh\nWoah-oh\nWoah-oh' },
+          { label: 'Chorus', text: 'Dakila Ka, O Diyos, tapat Ka ngang tunay\nMagmula pa sa ugat ng aming lahi\nMundo\'y magunaw man, maaasahan Kang lagi\nMaging hanggang wakas nitong buhay\nDakila Ka, O Diyos, sa habang panahon\nKatapatan Mo\'y matibay na sandigan\nSa bawat pighati, tagumpay man ay naroon\nDaluyan ng pag-asa kung kailanga\'y hinahon\nPag-ibig Mo\'y alay sa \'min noon hanggang ngayon\nDakila Ka, O Diyos' },
+          { label: 'Outro', text: 'Dakila\nDakila\nDakila Ka, O Diyos' },
         ]),
 
-        tl('seed_tl_sambahin_ang_ngalan', 'Sambahin Ang Ngalan Mo', '', '', '', 'worship', [
-          { label: 'Verse 1 [VERIFY]', text: 'Sa umaga hanggang gabi\nPinupuri Ka\nDakila ang Iyong pangalan\nO aking Diyos' },
-          { label: 'Chorus',  text: 'Sambahin ang ngalan Mo\nO Panginoong Diyos\nSambahin ang ngalan Mo\nSa lahat ng panahon' },
-          { label: 'Verse 2 [VERIFY]', text: 'Banal, banal ang pangalan Mo\nO Hari ng kapayapaan\nAng puso ko’y sumasamba\nSa harap ng Iyong trono' },
+        tl('paw_tl_nararapat', 'Nararapat', 'Spring Worship', '', '', 'worship', [
+          { label: 'Verse 1', text: 'Salamat sa dakila Mong pag-ibig\nSalamat sa pagyakap Mo, Ama\nAng presensiya Mo ang ninanais ko\nAng puso ko ay para lang sa \'Yo' },
+          { label: 'Chorus', text: 'Nararapat Ka sa papuri, luwalhati, at pagsamba\nHesus, Ika\'y dakilain magpakailanman\nNararapat Ka sa papuri, luwalhati, at pagsamba\nItataas ang ngalan Mo, Ama' },
+          { label: 'Interlude', text: 'Ooh, oh' },
+          { label: 'Verse 2', text: 'Kailanma\'y hindi Ka nagbabago\nTiwala ko\'y ibibigay sa \'Yo\nMga pangako Mo panghahawakan ko\nMamamalagi sa kalinga Mo' },
+          { label: 'Chorus', text: 'Nararapat Ka sa papuri, luwalhati, at pagsamba\nHesus, Ika\'y dakilain magpakailanman\nNararapat Ka sa papuri, luwalhati, at pagsamba\nItataas ang ngalan Mo, Ama\nNararapat Ka sa papuri, luwalhati, at pagsamba\nHesus, Ika\'y dakilain magpakailanman\nNararapat Ka sa papuri, luwalhati, at pagsamba\nItataas ang ngalan Mo, Ama, oh' },
         ]),
 
-        // ================ Tagalog translations of popular English songs ================
-        // These follow the known English structure (verse / chorus / bridge) but the
-        // Tagalog wording here is my best-effort translation — verify against the
-        // officially-translated version your church uses.
-
-        tl('seed_tl_kayganda_pangalan', 'Kayganda Ng Iyong Pangalan', 'Hillsong Worship (TL)', 'D', '7068424', 'worship', [
-          { label: 'Verse 1 [VERIFY]', text: 'Ikaw ang Salita sa simula\nKaisa Ka ng Diyos, Kataas-taasan\nAng Iyong kaluwalhatian sa likha\nInihayag ngayon kay Kristo' },
-          { label: 'Chorus 1',         text: 'Kayganda ng Iyong pangalan\nKayganda ng Iyong pangalan\nAng pangalan ni Hesus\nAking Hari\nKayganda ng Iyong pangalan\nWalang tatapat dito\nKayganda ng Iyong pangalan\nAng pangalan ni Hesus' },
-          { label: 'Verse 2 [VERIFY]', text: 'Hindi Mo hinangad ang langit nang wala kami\nKaya’t Hesus, dinala Mo pababa ang langit\nLaki ng aking kasalanan, higit ang pag-ibig Mo\nAno ang makapaghihiwalay sa atin ngayon' },
-          { label: 'Chorus 2',         text: 'Kahanga-hanga ang Iyong pangalan\nKahanga-hanga ang Iyong pangalan\nAng pangalan ni Hesus\nAking Hari' },
-          { label: 'Bridge [VERIFY]',  text: 'Hindi Ka makayanang hawakan ng kamatayan\nKurtina’y napunit sa harap Mo\nPinatahimik Mo ang kasalanan at libingan\nNagmumura ang mga kalangitan\nAng papuri ng Iyong kaluwalhatian\nSapagkat nabuhay Kang muli\nWalang katulad sa ’Yo\nWalang makakatumbas sa ’Yo\nNgayon at magpakailanman, Ika’y naghahari' },
-          { label: 'Chorus 3 [VERIFY]', text: 'Makapangyarihan ang pangalan Mo\nMakapangyarihan ang pangalan Mo\nAng pangalan ni Hesus\nAking Hari' },
+        tl('paw_tl_natagpuan', 'Natagpuan', 'Hope Filipino Worship', '', '', 'worship', [
+          { label: 'Verse 1', text: 'Ang tinig Mo ay aking hanap-hanap\nSa gitna ng bawat takot at paghihirap\nSa kabila ng aking pagkukulang\nKatapatan Mo, O Diyos, tanging laan' },
+          { label: 'Pre-Chorus', text: 'Sa puso at damdamin, Ika\'y mananatili\nWalang-hanggan ang alay Mong pag-ibig' },
+          { label: 'Chorus', text: 'Natagpuan ng \'Yong pag-ibig na dakila\nDoon sa krus, ako\'y Iyong pinalaya\nHesus, ako\'y aawit ng walang-hanggang pagpupuri\nAng puso ko\'y sa \'Yo iaalay, ooh' },
+          { label: 'Verse 2', text: 'Panginoon, Ikaw ang kaagapay\nKabutihan Mo sa \'ki\'y \'di nagkukulang\nPanginoon, Ikaw lang ang kailangan\nMagpakailanman, sa \'Yo ako\'y mananahan' },
+          { label: 'Pre-Chorus', text: 'Sa puso at damdamin, Ika\'y mananatili\nWalang-hanggan ang alay Mong pag-ibig' },
+          { label: 'Chorus', text: 'Natagpuan ng \'Yong pag-ibig na dakila\nDoon sa krus, ako\'y Iyong pinalaya\nHesus, ako\'y aawit ng walang-hanggang pagpupuri\nAng puso ko\'y sa \'Yo iaalay' },
+          { label: 'Bridge', text: 'Hangad ko lang ay mamalagi sa presensiya Mo\nNatagpuan, ako\'y binago ng pag-ibig Mo\nHangad ko lang ay mamalagi sa presensiya Mo\nLuwalhatiin ang pangalan Mo\nHangad ko\'y Ikaw, O Diyos\nHangad ko lang ay mamalagi sa presensiya Mo\nNatagpuan, ako\'y binago ng pag-ibig Mo\nHangad ko lang ay mamalagi sa presensiya Mo\nLuwalhatiin ang pangalan Mo' },
+          { label: 'Chorus', text: 'Ako ay natagpuan ng \'Yong pag-ibig na dakila\nDoon sa krus, ako\'y Iyong pinalaya\nHesus, ako\'y aawit ng walang-hanggang pagpupuri\nAng puso ko\'y sa \'Yo' },
+          { label: 'Bridge', text: 'Hangad ko lang ay mamalagi sa presensiya Mo\nNatagpuan, ako\'y binago ng pag-ibig Mo\nHangad ko lang ay mamalagi sa presensiya Mo\nLuwalhatiin ang pangalan Mo\nLuwalhatiin ang pangalan Mo, O Hesus\nLuwalhatiin ang pangalan Mo' },
         ]),
 
-        tl('seed_tl_tangi_kang_dakila', 'Panginoon Tangi Kang Dakila', 'Chris Tomlin (TL)', 'C', '4348399', 'worship', [
-          { label: 'Verse 1 [VERIFY]', text: 'Ang kaluwalhatian ng Hari\nNabalutan ng kadakilaan\nLahat ng lupa ay magsiawit\nMagsiawit ang buong lupa' },
-          { label: 'Chorus',           text: 'Panginoon tangi Kang dakila\nAwitin, Ikaw ay dakila\nMakikita ng lahat\nAng kadakilaan Mo' },
-          { label: 'Verse 2 [VERIFY]', text: 'Sa mga salinlahi Siya’y nananatili\nPanahon ay nasa Kanyang kamay\nSimula at katapusan\nSimula at katapusan' },
-          { label: 'Bridge [VERIFY]',  text: 'Pangalang higit sa lahat ng pangalan\nKarapat-dapat sa lahat ng papuri\nPuso ko ay aawit\nPanginoon Kang dakila' },
+        tl('paw_tl_sukdulang_biyaya', 'Sukdulang Biyaya', 'Musikatha', '', '', 'worship', [
+          { label: 'Verse', text: 'Habang hindi karapat-dapat\nPag-ukulan ng habag at wagas Mong pagsinta\nHabang walang kakayanan\nMasuklian Ka ng mabuti sa lahat Mong ginawa' },
+          { label: 'Pre-Chorus', text: 'Niyakap Mo ako sa aking karumihan\nInibig Mo ako ng \'di kayang tumbasan' },
+          { label: 'Chorus', text: 'O, Diyos ng katarungan at katuwiran\nNa kahit minsa\'y \'di nabahiran ang kabanala\'t kalwalhatian\nSalamat sa sukdulang biyaya Mo\nO, Diyos ng pag-ibig na mas malawak pa\nKaysa aking mga pagkakasala\nHigit pa sa buhay ko\nSalamat sa sukdulang biyaya Mo' },
+          { label: 'Verse', text: 'Habang hindi karapat-dapat\nPag-ukulan ng habag at wagas Mong pagsinta\nHabang walang kakayanan\nMasuklian Ka ng mabuti sa lahat Mong ginawa' },
+          { label: 'Pre-Chorus', text: 'Niyakap Mo ako sa aking karumihan\nInibig Mo ako ng \'di kayang tumbasan' },
+          { label: 'Chorus', text: 'Oh, Diyos ng katarungan at katuwiran\nNa kahit minsa\'y \'di nabahiran ang kabanala\'t kalwalhatian\nSalamat sa sukdulang biyaya Mo\nO, Diyos ng pag-ibig na mas malawak pa\nKaysa aking mga pagkakasala\nHigit pa sa buhay ko\nSalamat sa sukdulang biyaya Mo (O, aking Diyos)' },
+          { label: 'Pre-Chorus', text: 'Niyakap Mo ako sa aking karumihan\nInibig Mo ako ng \'di kayang tumbasan\nNiyakap Mo ako sa aking karumihan\nInibig Mo ako ng \'di kayang tumbasan' },
+          { label: 'Chorus', text: 'O, Diyos ng katarungan at katuwiran\nNa kahit minsa\'y \'di nabahiran ang kabanala\'t kalwalhatian\nSalamat sa sukdulang biyaya Mo\nO, Diyos ng pag-ibig na mas malawak pa\nKaysa aking mga pagkakasala\nHigit pa sa buhay ko\nSalamat sa sukdulang biyaya Mo\nSalamat sa sukdulang biyaya Mo' },
+          { label: 'Outro', text: 'O, salamat\nLuwalhati, papuri at pasasalamat sa Iyo, o, Diyos\nNapakayaman ng biyayang ipinadadaloy Mo sa aming mga buhay\nSalamat sa Iyong sukdulang biyaya\nHallelujah' },
         ]),
 
-        tl('seed_tl_banal_ang_panginoon', 'Banal Ang Panginoon', 'Chris Tomlin (TL)', 'G', '4158039', 'worship', [
-          { label: 'Verse 1 [VERIFY]', text: 'Kami’y tumatayo, tinataas ang mga kamay\nSa kagalakan ng Panginoon, lakas namin\nYumuyuko kami at sumasamba sa Kanya ngayon\nGaano kadakila, gaano kagandang Siya' },
-          { label: 'Chorus',           text: 'Banal ang Panginoong Diyos\nAng mundo ay puno ng Kanyang kaluwalhatian\nBanal ang Panginoong Diyos\nAng mundo ay puno ng Kanyang kaluwalhatian\nAng mundo ay puno ng Kanyang kaluwalhatian' },
-          { label: 'Bridge [VERIFY]',  text: 'Umaangat sa paligid\nAwit ng kadakilaan ng Panginoon\nUmaangat sa paligid\nAwit ng kadakilaan ng Panginoon' },
+        tl('paw_tl_may_galak', 'May Galak', 'Musikatha', '', '', 'worship', [
+          { label: 'Verse', text: 'May galak, may saya\nMay tuwa sa piling ng Diyos\nSapagkat hirap ng puso ay naglalaho\nMay awit, may sayaw\nAt papuri para sa Diyos\nNa hatid ng pusong pinagpala Niyang lubos' },
+          { label: 'Chorus', text: 'Handog Niya ay kapayapaan\nHandog Niya ay kagalakan\nHandog Niya ay kalakasan\nSa bawat pusong napapagal\nKaya\'t ang awit ng papuri\nAwit ng pasasalamat\nAt ang awit ng pagsamba\nAy para lang sa Kaniya' },
         ]),
 
-        tl('seed_tl_narito_po_ako', 'Narito Po Ako', 'Tim Hughes (TL)', 'E', '3266032', 'worship', [
-          { label: 'Verse 1 [VERIFY]', text: 'Liwanag ng sanlibutan\nBumaba Kayo sa kadiliman\nBinuksan ang mga mata ko\nPagandang pumukaw sa aking puso\nAng pag-asa ng buhay na sa ’Yo' },
-          { label: 'Chorus',           text: 'Narito po ako upang sumamba\nNarito po ako upang yumukod\nNarito po ako upang sabihin\nIkaw ang Diyos ko\nTunay Kang maganda\nLahat ay karapat-dapat\nLahat ay kahanga-hanga sa akin' },
-          { label: 'Verse 2 [VERIFY]', text: 'Hari ng lahat ng araw\nSiyang mataas sa langit\nMaluwalhati sa itaas\nMay kababaang-loob Kang bumaba\nPara sa pag-ibig, naging dukha' },
-          { label: 'Bridge [VERIFY]',  text: 'Hindi ko malalaman kung gaano kamahal\nMakita ang kasalanan ko sa krus\nHindi ko malalaman kung gaano kamahal\nMakita ang kasalanan ko sa krus' },
-        ]),
-
-        tl('seed_tl_ikaw_ay_mabuti', 'Ikaw Ay Mabuti', 'Bethel (TL)', 'A', '7117726', 'worship', [
-          { label: 'Verse 1 [VERIFY]', text: 'Mahal kita, Panginoon\nAng awa Mo’y hindi nagkukulang sa akin\nSa bawat araw, hawak Mo ako sa Iyong mga kamay\nSa sandaling magising ako\nHanggang mahiga ang ulo ko\nAawit ako ng kabutihan ng Diyos' },
-          { label: 'Chorus',           text: 'Sa buong buhay ko, Ikaw ay tapat\nSa buong buhay ko, Ikaw ay mabuti\nSa bawat hinga na may kakayahan\nAawit ako ng kabutihan ng Diyos' },
-          { label: 'Verse 2 [VERIFY]', text: 'Gusto ko ang tinig Mo\nGinabayan Mo ako sa apoy\nSa pinakamadilim na gabi, Ika’y malapit\nAng Diyos bilang Ama, Ama bilang Kaibigan\nNabuhay ako sa kabutihan ng Diyos' },
-          { label: 'Bridge [VERIFY]',  text: 'Ang kabutihan Mo’y humahabol\nHumahabol sa akin\nAng kabutihan Mo’y humahabol\nHumahabol sa akin\nSa buhay kong bigay, ngayo’y lubos\nIbinibigay ko ang lahat\nAng kabutihan Mo’y humahabol\nHumahabol sa akin' },
-        ]),
-
-        tl('seed_tl_halina', 'Halina sa Altar', 'Elevation Worship (TL)', 'B', '7051511', 'worship', [
-          { label: 'Verse 1 [VERIFY]', text: 'Ikaw ba ay sugatan at wasak?\nNabigatan ng kasalanan mo?\nTinatawag ka ni Hesus\nNarating mo ba ang katapusan mo?\nNauuhaw ka ba sa batis ng buhay?\nTinatawag ka ni Hesus' },
-          { label: 'Chorus',           text: 'Halina sa altar\nLaging bukas ang mga bisig ng Ama\nKapatawaran ay nabili\nNg dugo ni Hesukristo' },
-          { label: 'Verse 2 [VERIFY]', text: 'Iwanan ang mga pagsisisi at pagkakamali\nHalina ngayon, huwag mag-antala\nTinatawag ka ni Hesus\nDalhin mo ang hapis at palitan ng tuwa\nSa abo, isisilang ang bagong buhay\nTinatawag ka ni Hesus' },
-          { label: 'Bridge [VERIFY]',  text: 'O anong Tagapagligtas\nSiya’y kay galing\nAwitin, aleluya, si Kristo’y nabuhay\nLumuhod sa harap Niya\nSapagkat Siya’y Panginoon ng lahat\nAwitin, aleluya, si Kristo’y nabuhay' },
+        tl('paw_tl_sayo', 'Sa\'yo', 'Musikatha', '', '', 'worship', [
+          { label: 'Verse', text: 'O Diyos, sa \'Yo\'ng lahat ng pagsamba\'t luwalhati\nMaging ang pinakamainam kong awit ay aawitin sa \'Yo\nO Diyos, ang aking isipan ay pagharian Mo\nAt sa \'king puso ay hindi na maglaho tanging pag-ibig sa \'Yo' },
+          { label: 'Chorus', text: 'Ano pa ba ang maihahandog ko\nLiban sa buhay kong nanggaling sa \'Yo?\nKung anuman sa sandaling ito\'y tangan\nAt mga bagay na tinuring kong yaman\nIto\'y hindi pa rin sapat sa alay na nararapat sa \'Yo' },
+          { label: 'Verse', text: 'O Diyos, sa \'Yo\'ng lahat ng pagsamba\'t luwalhati\nMaging ang pinakamainam kong awit ay aawitin sa \'Yo\nO Diyos, ang aking isipan ay pagharian Mo\nAt sa \'king puso ay hindi na maglaho tanging pag-ibig sa \'Yo' },
+          { label: 'Chorus', text: 'Ano pa ba ang maihahandog ko\nLiban sa buhay kong nanggaling sa \'Yo?\nKung anuman sa sandaling ito\'y tangan\nAt mga bagay na tinuring kong yaman\nIto\'y hindi pa rin sapat sa alay na nararapat sa \'Yo' },
+          { label: 'Chorus', text: 'Ano pa ba ang maihahandog ko\nLiban sa buhay kong nanggaling sa \'Yo?\nKung anuman sa sandaling ito\'y tangan\nAt mga bagay na tinuring kong yaman\nIto\'y hindi pa rin sapat sa alay na nararapat\nIto\'y hindi pa rin sapat kahit ialay ang lahat sa \'Yo, sa \'Yo' },
         ]),
       ];
     },
