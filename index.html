@@ -1,0 +1,2150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Play &amp; Worship — Modern Worship Presentation for the Church</title>
+<link rel="icon" type="image/svg+xml" href="./assets/logo.svg">
+<meta name="description" content="A modern, zero-install worship presentation app. Songs, hymns, scripture, media, and a dedicated live projector — all in your browser.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* Color system */
+    --bg:        #08090f;
+    --bg-soft:   #0e111b;
+    --panel:     #141824;
+    --panel-2:   #1a1f2e;
+    --line:      #232c42;
+    --line-soft: #1b2234;
+
+    --ink:       #edf0f5;
+    --ink-dim:   #9ba4b8;
+    --ink-faint: #6b7387;
+
+    --brand:     #C89D4A;   /* antique gold */
+    --brand-2:   #2E736D;   /* myrtle green */
+    --brand-3:   #4A9691;   /* myrtle highlight */
+    --danger:    #c14a3a;   /* warm brick (harmonizes with gold) */
+    --ok:        #2E736D;   /* myrtle doubles as success */
+
+    /* Shape + motion */
+    --radius:    14px;
+    --radius-sm: 8px;
+    --radius-lg: 20px;
+
+    --ease:      cubic-bezier(.3, .1, .2, 1);
+    --ease-out:  cubic-bezier(.22, .61, .36, 1);
+    --ease-pop:  cubic-bezier(.34, 1.56, .64, 1);
+
+    /* Type scale (1.25 modular) */
+    --t-xs:  12px;
+    --t-sm:  13px;
+    --t-md:  15px;
+    --t-lg:  18px;
+    --t-xl:  22px;
+    --t-2xl: 28px;
+    --t-3xl: 36px;
+    --t-4xl: 48px;
+    --t-5xl: 64px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.6;
+    overflow-x: hidden;
+    position: relative;
+  }
+  /* Animated gradient mesh backdrop */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(circle at 15% 10%, rgba(46, 115, 109, 0.12), transparent 40%),
+      radial-gradient(circle at 85% 40%, rgba(200, 157, 74, 0.09), transparent 45%),
+      radial-gradient(circle at 50% 90%, rgba(74, 150, 145, 0.08), transparent 50%);
+    z-index: -1;
+    animation: meshDrift 20s ease-in-out infinite alternate;
+    pointer-events: none;
+  }
+  @keyframes meshDrift {
+    0%   { transform: translate3d(0, 0, 0) scale(1); }
+    100% { transform: translate3d(-20px, 30px, 0) scale(1.05); }
+  }
+  a { color: inherit; text-decoration: none; }
+  .serif { font-family: 'Source Serif 4', Georgia, serif; }
+
+  /* ---------- App loader (initial splash) ---------- */
+  .app-loader {
+    position: fixed; inset: 0; z-index: 9999;
+    display: flex; align-items: center; justify-content: center;
+    background:
+      radial-gradient(circle at 30% 30%, rgba(46, 115, 109, 0.18), transparent 55%),
+      radial-gradient(circle at 70% 70%, rgba(200, 157, 74, 0.12), transparent 55%),
+      var(--bg);
+    opacity: 1;
+    transition: opacity .7s var(--ease), visibility 0s linear .7s;
+  }
+  .app-loader.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+  .loader-content {
+    text-align: center;
+    position: relative;
+    padding: 40px;
+  }
+  .loader-logo-wrap {
+    position: relative;
+    width: 110px; height: 110px;
+    margin: 0 auto 28px;
+  }
+  .loader-ring {
+    position: absolute; inset: -12px;
+    border-radius: 50%;
+    border: 2px solid rgba(200, 157, 74, 0.1);
+    border-top-color: var(--brand);
+    border-right-color: var(--brand-2);
+    animation: ringSpin 1.6s linear infinite;
+  }
+  @keyframes ringSpin { to { transform: rotate(360deg); } }
+  .loader-ring.inner {
+    inset: 10px;
+    border: 2px solid rgba(46, 115, 109, 0.12);
+    border-bottom-color: var(--brand-2);
+    animation: ringSpin 2.4s linear infinite reverse;
+  }
+  .loader-logo {
+    position: absolute; inset: 18px;
+    border-radius: 22px;
+    background: linear-gradient(135deg, var(--brand), var(--brand-2));
+    box-shadow:
+      0 0 60px rgba(200, 157, 74, 0.55),
+      0 0 120px rgba(46, 115, 109, 0.25);
+    animation: logoPulse 2s ease-in-out infinite;
+  }
+  @keyframes logoPulse {
+    0%, 100% { transform: scale(1);    box-shadow: 0 0 60px rgba(200, 157, 74, 0.5),  0 0 120px rgba(46, 115, 109, 0.2); }
+    50%      { transform: scale(1.06); box-shadow: 0 0 90px rgba(200, 157, 74, 0.75), 0 0 160px rgba(46, 115, 109, 0.35); }
+  }
+  .loader-title {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 36px; font-weight: 700;
+    color: var(--ink);
+    margin: 0 0 6px;
+    letter-spacing: -0.02em;
+  }
+  .loader-tagline {
+    color: var(--ink-dim);
+    margin: 0 0 34px;
+    font-size: 14px;
+  }
+  .loader-bar {
+    width: 240px; height: 3px;
+    background: rgba(200, 157, 74, 0.12);
+    border-radius: 3px;
+    margin: 0 auto 18px;
+    overflow: hidden;
+    position: relative;
+  }
+  .loader-bar-fill {
+    position: absolute; top: 0; left: 0; height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--brand), var(--brand-2), var(--brand));
+    background-size: 200% 100%;
+    animation: loaderFill 3.2s cubic-bezier(.3,.1,.25,1) forwards, loaderShimmer 1.5s linear infinite;
+    border-radius: 3px;
+  }
+  @keyframes loaderFill { to { width: 100%; } }
+  @keyframes loaderShimmer { to { background-position: 200% 0; } }
+  .loader-status {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    color: var(--ink-faint);
+    margin: 0;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    font-weight: 600;
+    min-height: 14px;
+  }
+  .loader-status.step-change { animation: statusFade .5s var(--ease-out); }
+  @keyframes statusFade {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  /* Prevent scroll while loader is visible */
+  body.loading { overflow: hidden; }
+
+  /* ---------- Scroll reveal ---------- */
+  .reveal {
+    opacity: 0; transform: translateY(30px);
+    transition: opacity .8s cubic-bezier(.2,.6,.2,1), transform .8s cubic-bezier(.2,.6,.2,1);
+  }
+  .reveal.in { opacity: 1; transform: translateY(0); }
+  .reveal.delay-1 { transition-delay: .08s; }
+  .reveal.delay-2 { transition-delay: .16s; }
+  .reveal.delay-3 { transition-delay: .24s; }
+
+  /* ---------- Nav ---------- */
+  .nav {
+    position: sticky; top: 0; z-index: 20;
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    background: rgba(10, 13, 20, 0.7);
+    border-bottom: 1px solid rgba(35, 44, 66, 0.6);
+    transition: padding .3s ease, background .3s ease;
+  }
+  .nav.scrolled { padding-top: 0; padding-bottom: 0; background: rgba(10, 13, 20, 0.9); }
+  .nav.scrolled .nav-inner { padding: 10px 24px; }
+  .nav-inner {
+    max-width: 1200px; margin: 0 auto;
+    padding: 16px 24px;
+    display: flex; align-items: center; gap: 24px;
+    transition: padding .3s ease;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-family: 'Source Serif 4', serif;
+    font-weight: 600; font-size: 20px;
+  }
+  .brand-mark {
+    width: 30px; height: 30px; border-radius: 8px;
+    background: url('./assets/logo.svg') center/cover no-repeat;
+    box-shadow: 0 2px 12px rgba(200, 157, 74, 0.35), 0 0 0 1px rgba(200, 157, 74, 0.15);
+  }
+  .nav-links { display: flex; gap: 28px; margin-left: auto; font-size: 14px; color: var(--ink-dim); }
+  .nav-links a:hover { color: var(--ink); }
+  .nav-cta {
+    padding: 8px 16px; border-radius: 8px;
+    background: var(--brand); color: #1a1306;
+    font-weight: 600; font-size: 14px;
+  }
+  .nav-cta:hover { filter: brightness(1.1); }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    position: relative;
+    max-width: 1200px; margin: 0 auto;
+    padding: 100px 24px 80px;
+    text-align: center;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; top: -100px; left: 50%;
+    transform: translateX(-50%);
+    width: 700px; height: 700px;
+    background: radial-gradient(circle, rgba(46, 115, 109, 0.18), transparent 60%);
+    z-index: -1;
+  }
+  .tag {
+    display: inline-block;
+    padding: 6px 14px; margin-bottom: 24px;
+    border: 1px solid var(--line); border-radius: 999px;
+    font-size: 12px; letter-spacing: 0.1em;
+    color: var(--ink-dim); text-transform: uppercase;
+  }
+  .tag .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--ok); margin-right: 8px; veritcall-align: middle; }
+  h1 {
+    font-family: 'Source Serif 4', serif;
+    font-size: clamp(44px, 7vw, 82px);
+    line-height: 1.05; font-weight: 700;
+    margin: 0 0 20px;
+    letter-spacing: -0.035em;
+  }
+  h1 .accent {
+    font-style: italic; font-weight: 600;
+    background: linear-gradient(120deg, var(--brand) 0%, #ffd88a 50%, var(--brand-2) 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: accentShimmer 6s linear infinite;
+  }
+  @keyframes accentShimmer {
+    0%   { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+  }
+  .lede {
+    max-width: 680px; margin: 0 auto 40px;
+    font-size: 18px; color: var(--ink-dim);
+  }
+  .hero-ctas {
+    display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;
+    margin-bottom: 48px;
+  }
+  .btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 15px 28px; border-radius: 12px;
+    font-weight: 600; font-size: 15px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    position: relative; overflow: hidden;
+    transition: transform .2s cubic-bezier(.3,.1,.2,1), box-shadow .25s, filter .2s;
+  }
+  .btn:hover { transform: translateY(-2px); }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--brand) 0%, #E3B96E 100%);
+    color: #1a1306;
+    box-shadow: 0 10px 30px -10px rgba(200, 157, 74, 0.55);
+  }
+  .btn-primary:hover { box-shadow: 0 16px 40px -10px rgba(200, 157, 74, 0.75); }
+  .btn-ghost { background: rgba(21, 27, 41, 0.6); backdrop-filter: blur(8px); color: var(--ink); border-color: var(--line); }
+  .btn-ghost:hover { background: var(--panel); border-color: var(--brand); }
+  .btn::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.25) 50%, transparent 70%);
+    transform: translateX(-120%);
+    transition: transform .7s ease;
+    pointer-events: none;
+  }
+  .btn:hover::before { transform: translateX(120%); }
+  .btn svg { width: 18px; height: 18px; position: relative; z-index: 1; }
+  .btn span, .btn svg + * { position: relative; z-index: 1; }
+
+  /* ---------- Screenshot mock ---------- */
+  .shot {
+    max-width: 1000px; margin: 0 auto;
+    border-radius: var(--radius);
+    border: 1px solid var(--line);
+    background: var(--panel);
+    box-shadow: 0 30px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(200, 157, 74, 0.04);
+    overflow: hidden;
+  }
+  .shot-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 16px;
+    background: var(--bg-soft);
+    border-bottom: 1px solid var(--line);
+  }
+  .shot-dot { width: 11px; height: 11px; border-radius: 50%; background: #3a4258; }
+  .shot-body {
+    padding: 40px;
+    min-height: 320px;
+    background:
+      radial-gradient(circle at 20% 20%, rgba(46, 115, 109, 0.1), transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(200, 157, 74, 0.08), transparent 50%),
+      var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; text-align: center;
+    font-family: 'Source Serif 4', serif;
+  }
+  .shot-verse { font-size: clamp(24px, 3vw, 40px); max-width: 700px; color: var(--ink); line-height: 1.4; margin-bottom: 16px; }
+  .shot-ref { font-size: 14px; color: var(--brand); letter-spacing: 0.15em; text-transform: uppercase; }
+
+  /* ---------- Stats strip ---------- */
+  .stats {
+    max-width: 1100px; margin: 80px auto 0;
+    padding: 40px 24px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 32px;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    background:
+      radial-gradient(circle at center, rgba(200, 157, 74, 0.05), transparent 70%);
+  }
+  .stat { text-align: center; }
+  .stat-num {
+    font-family: 'Source Serif 4', serif;
+    font-size: clamp(36px, 5vw, 54px);
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--brand), #E3B96E);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .stat-label {
+    color: var(--ink-dim); font-size: 12px;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  /* ---------- Features ---------- */
+  .features {
+    max-width: 1200px; margin: 120px auto;
+    padding: 0 24px;
+  }
+  .section-head { text-align: center; margin-bottom: 60px; }
+  .section-head h2 {
+    font-family: 'Source Serif 4', serif;
+    font-size: clamp(34px, 4.5vw, 52px);
+    margin: 0 0 16px; font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+  }
+  .section-head h2::after {
+    content: '';
+    display: block;
+    width: 56px; height: 3px;
+    margin: 18px auto 0;
+    background: linear-gradient(90deg, var(--brand), var(--brand-2));
+    border-radius: 3px;
+  }
+  .section-head p { color: var(--ink-dim); max-width: 640px; margin: 0 auto; font-size: 15px; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+  }
+  .card {
+    position: relative;
+    padding: 32px 28px;
+    background: rgba(21, 27, 41, 0.55);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(35, 44, 66, 0.8);
+    border-radius: 16px;
+    transition: transform .3s cubic-bezier(.3,.1,.2,1), border-color .25s, box-shadow .3s;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute; inset: 0;
+    border-radius: 16px;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(200, 157, 74, 0.4), rgba(46, 115, 109, 0.4));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    opacity: 0;
+    transition: opacity .3s;
+    pointer-events: none;
+  }
+  .card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 50px -20px rgba(0,0,0,0.6);
+  }
+  .card:hover::before { opacity: 1; }
+  .card-ico {
+    width: 48px; height: 48px; border-radius: 12px;
+    background: linear-gradient(135deg, rgba(200, 157, 74, 0.22), rgba(46, 115, 109, 0.22));
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 18px;
+    color: var(--brand);
+    transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+  }
+  .card:hover .card-ico { transform: scale(1.08) rotate(-4deg); }
+  .card-ico svg { width: 24px; height: 24px; }
+  .card h3 { margin: 0 0 8px; font-size: 18px; font-weight: 600; }
+  .card p { margin: 0; color: var(--ink-dim); font-size: 14px; }
+
+  /* ---------- Feature presentation (auto-cycling scenes showcasing the app) ---------- */
+  .video-ad { max-width: 1120px; margin: 120px auto; padding: 0 24px; }
+  .va-frame {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    background: var(--bg-soft);
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--line);
+    box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+  }
+  .va-progress {
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: rgba(255,255,255,0.08); z-index: 10;
+  }
+  .va-progress span {
+    display: block; height: 100%; width: 0%;
+    background: linear-gradient(90deg, var(--brand), var(--brand-2));
+    transition: width 60ms linear;
+  }
+  .va-scene {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; text-align: center;
+    padding: 4% 5% 0;
+    opacity: 0; transform: scale(1.06);
+    transition: opacity .6s ease, transform 1.2s cubic-bezier(.22,.61,.36,1);
+    pointer-events: none;
+  }
+  .va-scene.active { opacity: 1; transform: scale(1); pointer-events: auto; }
+  /* Subtle ken-burns drift during the active window */
+  .va-scene.active .mock,
+  .va-scene.active .mock-sched,
+  .va-scene.active .mon-row,
+  .va-scene.active .proj-text {
+    animation: kenBurns 7s ease-in-out forwards;
+  }
+  @keyframes kenBurns {
+    0%   { transform: scale(1); }
+    100% { transform: scale(1.03); }
+  }
+
+  /* ---- Floating brand particles (ambient motion) ---- */
+  .va-particles {
+    position: absolute; inset: 0;
+    overflow: hidden; pointer-events: none; z-index: 1;
+  }
+  .va-particles span {
+    position: absolute; bottom: -10px;
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--brand);
+    opacity: 0; filter: blur(0.5px);
+    animation: floatUp linear infinite;
+  }
+  .va-particles span:nth-child(odd) { background: var(--brand-2); }
+  .va-particles span:nth-child(1)  { left:  5%; animation-duration:  9s; animation-delay: 0s; }
+  .va-particles span:nth-child(2)  { left: 18%; animation-duration: 11s; animation-delay: 1.2s; width: 3px; height: 3px; }
+  .va-particles span:nth-child(3)  { left: 31%; animation-duration: 10s; animation-delay: 0.6s; }
+  .va-particles span:nth-child(4)  { left: 44%; animation-duration: 12s; animation-delay: 2.1s; width: 6px; height: 6px; }
+  .va-particles span:nth-child(5)  { left: 57%; animation-duration:  9.5s; animation-delay: 1.8s; width: 3px; height: 3px; }
+  .va-particles span:nth-child(6)  { left: 70%; animation-duration: 11.5s; animation-delay: 0.4s; }
+  .va-particles span:nth-child(7)  { left: 83%; animation-duration: 10.5s; animation-delay: 2.6s; width: 4px; height: 4px; }
+  .va-particles span:nth-child(8)  { left: 92%; animation-duration:  9s; animation-delay: 3s; }
+  .va-particles span:nth-child(9)  { left: 12%; animation-duration: 13s; animation-delay: 4s; }
+  .va-particles span:nth-child(10) { left: 62%; animation-duration: 14s; animation-delay: 2s; width: 3px; height: 3px; }
+  @keyframes floatUp {
+    0%   { transform: translateY(0) translateX(0); opacity: 0; }
+    10%  { opacity: 0.45; }
+    50%  { transform: translateY(-50vh) translateX(20px); opacity: 0.55; }
+    90%  { opacity: 0.3; }
+    100% { transform: translateY(-110%) translateX(-20px); opacity: 0; }
+  }
+
+  /* Caption at the bottom of every feature scene */
+  .va-caption {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 14px 24px 18px;
+    background: linear-gradient(to top, rgba(10,13,20,0.85), transparent);
+    text-align: center;
+  }
+  .va-label {
+    display: inline-block;
+    color: var(--brand); font-size: 10px; font-weight: 700;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .va-title {
+    font-family: 'Source Serif 4', serif; font-weight: 600;
+    color: #fff; margin: 0;
+    font-size: clamp(14px, 1.9vw, 22px);
+  }
+  .va-desc {
+    color: var(--ink-dim); margin: 2px 0 0;
+    font-size: clamp(11px, 1.2vw, 13px);
+  }
+
+  /* Mock UI primitives (match the real operator console) */
+  .mock {
+    background: #171d2b;
+    border: 1px solid #283044;
+    border-radius: 6px;
+    color: #d8dde8;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    font-size: clamp(10px, 1.08vw, 12.5px);
+    overflow: hidden;
+    text-align: left;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+  }
+  .mock-head {
+    padding: 7px 12px;
+    background: #0f1420;
+    border-bottom: 1px solid #283044;
+    display: flex; align-items: center; gap: 8px;
+    font-size: clamp(9px, 0.95vw, 10.5px);
+    color: #8a93a6; letter-spacing: 0.15em; text-transform: uppercase;
+    font-weight: 600;
+  }
+  .mock-head .dot { width: 6px; height: 6px; border-radius: 50%; background: #c14a3a; animation: pulse 1.6s infinite; }
+  .mock-tabs { display: flex; background: #0f1420; border-bottom: 1px solid #283044; }
+  .mock-tab {
+    padding: 8px 14px; font-size: clamp(10px, 1vw, 12px);
+    color: #8a93a6; cursor: default;
+    border-right: 1px solid #283044;
+  }
+  .mock-tab.active { color: #fff; background: #171d2b; border-bottom: 2px solid var(--brand); margin-bottom: -1px; }
+  .mock-search {
+    padding: 8px 12px; margin: 8px;
+    background: #0e131f; border: 1px solid #283044;
+    border-radius: 4px; color: #8a93a6;
+  }
+  .mock-row {
+    padding: 9px 12px; border-top: 1px solid #1f2738;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .mock-row.active { background: rgba(31, 122, 201, 0.18); color: #fff; }
+  .mock-row-ico {
+    width: 22px; height: 22px; border-radius: 4px;
+    background: linear-gradient(135deg, rgba(200, 157, 74, 0.25), rgba(46, 115, 109, 0.25));
+    flex-shrink: 0;
+  }
+  .mock-row-title { flex: 1; font-weight: 500; }
+  .mock-row-sub { color: #8a93a6; font-size: 10.5px; }
+  .mock-btn {
+    padding: 7px 12px; border-radius: 4px;
+    background: #1f7ac9; color: #fff; font-weight: 600;
+    font-size: 11px; display: inline-block;
+  }
+  .mock-btn.ghost { background: #283044; color: #d8dde8; }
+  .mock-btn.danger { background: #e84545; }
+  .mock-chip {
+    padding: 4px 10px; border-radius: 3px;
+    background: #1f2738; color: #8a93a6;
+    font-size: 10.5px; font-weight: 600;
+  }
+  .mock-chip.active { background: var(--brand); color: #1a1306; }
+
+  /* ---- Cinematic chapter badge (top-left of feature scenes) ---- */
+  .va-chapter {
+    position: absolute; top: 22px; left: 26px;
+    z-index: 5;
+    display: flex; align-items: center; gap: 14px;
+    opacity: 0; transform: translateX(-20px);
+  }
+  .va-scene.active .va-chapter { animation: vaChapter .6s .05s forwards ease-out; }
+  @keyframes vaChapter { to { opacity: 1; transform: translateX(0); } }
+  .va-chapter-num {
+    font-family: 'Source Serif 4', serif;
+    font-size: clamp(34px, 4.8vw, 58px);
+    font-weight: 700; line-height: 1;
+    color: transparent;
+    background: linear-gradient(135deg, var(--brand), var(--brand-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+  .va-chapter-line {
+    display: flex; flex-direction: column; gap: 2px;
+    padding-left: 14px;
+    border-left: 1px solid rgba(200, 157, 74, 0.4);
+  }
+  .va-chapter-kicker {
+    font-size: 9.5px; font-weight: 700;
+    letter-spacing: 0.28em; text-transform: uppercase;
+    color: var(--brand);
+  }
+  .va-chapter-title {
+    font-family: 'Source Serif 4', serif;
+    font-size: clamp(14px, 1.7vw, 19px);
+    font-weight: 600; color: #fff;
+    letter-spacing: 0.3em; opacity: 0;
+  }
+  .va-scene.active .va-chapter-title { animation: letterCollapse .8s .45s forwards ease-out; }
+  @keyframes letterCollapse {
+    from { letter-spacing: 0.3em; opacity: 0; }
+    to   { letter-spacing: -0.01em; opacity: 1; }
+  }
+
+  /* ---- Animated cursor + click ripple ---- */
+  .va-cursor {
+    position: absolute; z-index: 7;
+    width: 18px; height: 22px;
+    pointer-events: none;
+    opacity: 0;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.6));
+    transition: left .9s cubic-bezier(.3,.1,.25,1), top .9s cubic-bezier(.3,.1,.25,1);
+  }
+  .va-cursor svg { width: 100%; height: 100%; }
+  .va-click {
+    position: absolute; z-index: 6;
+    width: 44px; height: 44px; margin-left: -22px; margin-top: -22px;
+    border-radius: 50%;
+    border: 2px solid var(--brand);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* ---- Key press indicator ---- */
+  .va-key {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 6px 14px;
+    background: var(--panel); border: 1px solid var(--line);
+    border-bottom-width: 3px;
+    border-radius: 6px;
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(10px, 1.1vw, 12px); font-weight: 700;
+    color: var(--ink);
+    letter-spacing: 0.05em;
+  }
+  .va-key.active {
+    animation: keyTap .35s ease;
+    border-color: var(--brand);
+    color: var(--brand);
+  }
+  @keyframes keyTap {
+    0%   { transform: translateY(0); box-shadow: 0 0 0 rgba(200,157,74,0); }
+    50%  { transform: translateY(3px); box-shadow: 0 0 20px rgba(200,157,74,0.5); }
+    100% { transform: translateY(0); }
+  }
+
+  /* ---- Scene: intro — emotional hook + logo + pillars ---- */
+  .va-scene[data-scene="intro"] {
+    background: radial-gradient(circle at center, rgba(46, 115, 109, 0.22), #0a0d14 70%);
+  }
+  .va-hook {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    padding: 6%;
+  }
+  .va-hook-text {
+    font-family: 'Source Serif 4', serif;
+    font-size: clamp(18px, 2.6vw, 32px);
+    font-weight: 400; font-style: italic;
+    color: rgba(255,255,255,0.75);
+    opacity: 0; max-width: 80%; text-align: center; line-height: 1.4;
+  }
+  .va-scene[data-scene="intro"].active .va-hook-text { animation: vaHook 3.2s forwards; }
+  @keyframes vaHook {
+    0%   { opacity: 0; transform: translateY(10px); }
+    18%  { opacity: 1; transform: translateY(0); }
+    78%  { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-10px); }
+  }
+  .va-stage {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; padding: 6%;
+    opacity: 0;
+  }
+  .va-scene[data-scene="intro"].active .va-stage { animation: vaFade 1s 3.2s forwards; }
+  .va-logo {
+    width: clamp(64px, 7.5vw, 96px); height: clamp(64px, 7.5vw, 96px);
+    border-radius: 18px;
+    background: url('./assets/logo.svg') center/cover no-repeat;
+    box-shadow:
+      0 0 60px rgba(200, 157, 74, 0.55),
+      0 0 0 0 rgba(200, 157, 74, 0.4);
+    margin-bottom: 20px;
+    animation: logoGlow 2.5s 3.2s ease-in-out infinite;
+  }
+  @keyframes logoGlow {
+    0%, 100% { box-shadow: 0 0 60px rgba(200, 157, 74, 0.5), 0 0 0 0 rgba(200, 157, 74, 0.3); }
+    50%      { box-shadow: 0 0 80px rgba(200, 157, 74, 0.7), 0 0 0 8px rgba(200, 157, 74, 0); }
+  }
+  .va-scene[data-scene="intro"] h3 {
+    font-family: 'Source Serif 4', serif;
+    font-size: clamp(24px, 3.8vw, 46px); font-weight: 600;
+    color: #fff; margin: 0 0 6px;
+  }
+  .va-scene[data-scene="intro"] p { color: var(--ink-dim); margin: 0 0 24px; font-size: clamp(12px, 1.5vw, 16px); }
+
+  .va-pillars { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  .va-pillar {
+    padding: 7px 13px; border: 1px solid var(--line);
+    border-radius: 999px; font-size: clamp(10px, 1vw, 12px); font-weight: 500;
+    color: var(--ink); background: rgba(21, 27, 41, 0.6);
+    opacity: 0; transform: translateY(16px) scale(0.85);
+  }
+  .va-scene[data-scene="intro"].active .va-pillar:nth-child(1) { animation: pillarPop .55s 4.1s cubic-bezier(.34,1.56,.64,1) forwards; }
+  .va-scene[data-scene="intro"].active .va-pillar:nth-child(2) { animation: pillarPop .55s 4.25s cubic-bezier(.34,1.56,.64,1) forwards; }
+  .va-scene[data-scene="intro"].active .va-pillar:nth-child(3) { animation: pillarPop .55s 4.4s cubic-bezier(.34,1.56,.64,1) forwards; }
+  .va-scene[data-scene="intro"].active .va-pillar:nth-child(4) { animation: pillarPop .55s 4.55s cubic-bezier(.34,1.56,.64,1) forwards; }
+  .va-scene[data-scene="intro"].active .va-pillar:nth-child(5) { animation: pillarPop .55s 4.7s cubic-bezier(.34,1.56,.64,1) forwards; }
+  @keyframes pillarPop {
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes vaFade { to { opacity: 1; } }
+  @keyframes vaUp   { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Scene: library — with typing search + cursor interaction */
+  .va-scene[data-scene="library"] .mock { width: min(58%, 480px); opacity: 0; transform: translateY(10px); }
+  .va-scene[data-scene="library"].active .mock { animation: vaUp .6s .6s forwards; }
+  .va-scene[data-scene="library"] .mock-row { opacity: 0; transform: translateX(-12px); }
+  .va-scene[data-scene="library"].active .mock-row:nth-child(1) { animation: vaSlideIn .3s 1s forwards; }
+  .va-scene[data-scene="library"].active .mock-row:nth-child(2) { animation: vaSlideIn .3s 1.13s forwards; }
+  .va-scene[data-scene="library"].active .mock-row:nth-child(3) { animation: vaSlideIn .3s 1.26s forwards; }
+  .va-scene[data-scene="library"].active .mock-row:nth-child(4) { animation: vaSlideIn .3s 1.39s forwards; }
+  .va-scene[data-scene="library"].active .mock-row:nth-child(5) { animation: vaSlideIn .3s 1.52s forwards; }
+  .va-scene[data-scene="library"].active .mock-row:nth-child(6) { animation: vaSlideIn .3s 1.65s forwards; }
+  @keyframes vaSlideIn { to { opacity: 1; transform: translateX(0); } }
+  /* Typing cursor in search box */
+  .mock-search.typing::after {
+    content: ''; display: inline-block;
+    width: 1.5px; height: 12px; background: var(--brand);
+    margin-left: 2px; veritcal-align: middle;
+    animation: caret 0.8s infinite;
+  }
+  @keyframes caret { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+  .va-scene[data-scene="library"].active .va-cursor {
+    animation: libCursor 4s 2.2s forwards;
+    left: 50%; top: 55%;
+  }
+  @keyframes libCursor {
+    0%   { opacity: 0; left: 50%; top: 75%; }
+    10%  { opacity: 1; }
+    45%  { opacity: 1; left: 35%; top: 45%; }
+    55%  { opacity: 1; }
+    100% { opacity: 1; left: 35%; top: 45%; }
+  }
+
+  /* Scene: scripture — cursor clicks verse, highlight pulse */
+  .va-scene[data-scene="scripture"] .mock { width: min(62%, 520px); opacity: 0; }
+  .va-scene[data-scene="scripture"].active .mock { animation: vaFade .6s .6s forwards; }
+  .mock-verse.highlight {
+    position: relative;
+    animation: versePulse 2s 2.5s ease-out;
+  }
+  @keyframes versePulse {
+    0%   { box-shadow: inset 0 0 0 rgba(31, 122, 201, 0); }
+    30%  { box-shadow: inset 0 0 40px rgba(31, 122, 201, 0.5); transform: scale(1.015); }
+    70%  { box-shadow: inset 0 0 40px rgba(31, 122, 201, 0.5); }
+    100% { box-shadow: inset 0 0 0 rgba(31, 122, 201, 0); transform: scale(1); }
+  }
+  .va-scene[data-scene="scripture"].active .va-cursor {
+    animation: scrCursor 3.5s 1s forwards;
+  }
+  @keyframes scrCursor {
+    0%   { opacity: 0; left: 82%; top: 80%; }
+    15%  { opacity: 1; }
+    55%  { opacity: 1; left: 50%; top: 58%; }
+    65%  { opacity: 1; left: 50%; top: 58%; transform: scale(0.85); }
+    70%  { transform: scale(1); }
+    100% { opacity: 1; left: 50%; top: 58%; }
+  }
+  .va-scene[data-scene="scripture"].active .va-click {
+    left: 50%; top: 58%;
+    animation: clickRipple .6s 2.45s forwards;
+  }
+  @keyframes clickRipple {
+    0%   { opacity: 0.9; transform: scale(0); }
+    100% { opacity: 0;   transform: scale(2.2); }
+  }
+
+  /* Translation chip "active swap" on scripture */
+  .mock-chip {
+    transition: background .3s ease, color .3s ease;
+  }
+  .va-scene[data-scene="scripture"].active .mock-chip.active {
+    animation: chipPulse 1.4s 3.4s ease;
+  }
+  @keyframes chipPulse {
+    0%   { transform: scale(1); }
+    50%  { transform: scale(1.08); box-shadow: 0 0 16px rgba(200, 157, 74, 0.6); }
+    100% { transform: scale(1); }
+  }
+  .mock-bible-head { padding: 10px 12px; display: flex; gap: 8px; align-items: center; }
+  .mock-select {
+    padding: 5px 10px; background: #0e131f; border: 1px solid #283044;
+    border-radius: 3px; font-size: 11px; color: #d8dde8;
+  }
+  .mock-chips { display: flex; gap: 6px; padding: 0 12px 10px; border-bottom: 1px solid #283044; }
+  .mock-verse { padding: 8px 12px; border-top: 1px solid #1f2738; font-size: 11.5px; line-height: 1.5; }
+  .mock-verse.highlight { background: rgba(31, 122, 201, 0.15); color: #fff; }
+  .mock-verse .vnum { color: var(--brand); font-weight: 700; margin-right: 6px; }
+  .va-scene[data-scene="scripture"] .mock-verse { opacity: 0; }
+  .va-scene[data-scene="scripture"].active .mock-verse:nth-of-type(1) { animation: vaFade .3s .50s forwards; }
+  .va-scene[data-scene="scripture"].active .mock-verse:nth-of-type(2) { animation: vaFade .3s .62s forwards; }
+  .va-scene[data-scene="scripture"].active .mock-verse:nth-of-type(3) { animation: vaFade .3s .74s forwards; }
+  .va-scene[data-scene="scripture"].active .mock-verse:nth-of-type(4) { animation: vaFade .3s 1.0s forwards; }
+  .va-scene[data-scene="scripture"].active .mock-verse:nth-of-type(5) { animation: vaFade .3s 1.15s forwards; }
+  .va-scene[data-scene="scripture"].active .mock-verse:nth-of-type(6) { animation: vaFade .3s 1.28s forwards; }
+
+  /* Scene: schedule */
+  .va-scene[data-scene="schedule"] .mock-sched { width: min(72%, 620px); padding: 14px; opacity: 0; }
+  .va-scene[data-scene="schedule"].active .mock-sched { animation: vaUp .6s .5s forwards; }
+  .mock-sect-label {
+    font-size: 9.5px; font-weight: 700; color: #8a93a6;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    margin: 8px 0 6px;
+  }
+  .mock-sched-row {
+    display: flex; gap: 6px; margin-bottom: 4px; flex-wrap: wrap;
+  }
+  .mock-card {
+    padding: 7px 10px; background: #171d2b; border: 1px solid #283044;
+    border-radius: 4px; font-size: 11.5px; color: #d8dde8;
+    display: inline-flex; align-items: center; gap: 6px;
+    opacity: 0; transform: translateX(-10px);
+  }
+  .mock-card.live {
+    border-color: var(--brand);
+    background: linear-gradient(90deg, rgba(200, 157, 74, 0.12), rgba(31, 122, 201, 0.08));
+  }
+  .mock-card .live-badge {
+    font-size: 9px; font-weight: 800; color: #fff;
+    background: #e84545; padding: 2px 6px; border-radius: 2px;
+    letter-spacing: 0.12em;
+  }
+  .mock-card .slide-count { color: #8a93a6; font-size: 10px; }
+  .va-scene[data-scene="schedule"].active .mock-card:nth-child(1) { animation: vaSlideIn .3s 1.0s forwards; }
+  .va-scene[data-scene="schedule"].active .mock-card:nth-child(2) { animation: vaSlideIn .3s 1.15s forwards; }
+  .va-scene[data-scene="schedule"].active .mock-card:nth-child(3) { animation: vaSlideIn .3s 1.30s forwards; }
+  .va-scene[data-scene="schedule"].active .mock-card:nth-child(4) { animation: vaSlideIn .3s 1.45s forwards; }
+  .va-scene[data-scene="schedule"].active .mock-card:nth-child(5) { animation: vaSlideIn .3s 1.60s forwards; }
+  .va-scene[data-scene="schedule"].active .mock-card:nth-child(6) { animation: vaSlideIn .3s 1.75s forwards; }
+  .mock-card.live {
+    animation: liveCardGlow 2s 2.2s ease-in-out infinite;
+  }
+  @keyframes liveCardGlow {
+    0%, 100% { box-shadow: 0 0 0 rgba(200, 157, 74, 0); }
+    50%      { box-shadow: 0 0 22px rgba(200, 157, 74, 0.4); }
+  }
+  /* Drag-and-drop demonstration on one card — chains slide-in then drag */
+  .va-scene[data-scene="schedule"].active .mock-card.dragging {
+    position: relative;
+    z-index: 5;
+    animation:
+      vaSlideIn .3s 1s forwards,
+      dragCard 3.2s 2.4s ease-in-out forwards;
+  }
+  @keyframes dragCard {
+    0%   { opacity: 1; transform: translate(0, 0) rotate(0) scale(1); box-shadow: 0 0 0 rgba(0,0,0,0); }
+    15%  { opacity: 1; transform: translate(4px, -10px) rotate(-1.5deg) scale(1.04); box-shadow: 0 14px 26px rgba(0,0,0,0.55); }
+    45%  { opacity: 1; transform: translate(80px, -10px) rotate(-1.5deg) scale(1.04); box-shadow: 0 14px 26px rgba(0,0,0,0.55); }
+    75%  { opacity: 1; transform: translate(120px, -6px) rotate(-0.5deg) scale(1.02); }
+    100% { opacity: 1; transform: translate(0, 0) rotate(0) scale(1); box-shadow: 0 0 0 rgba(0,0,0,0); }
+  }
+  /* Cursor that drives the drag */
+  .va-scene[data-scene="schedule"].active .va-cursor {
+    animation: schedCursor 3.5s 2.4s forwards;
+  }
+  @keyframes schedCursor {
+    0%   { opacity: 0; left: 28%; top: 42%; }
+    10%  { opacity: 1; }
+    15%  { transform: scale(0.85); }
+    20%  { transform: scale(1); }
+    45%  { opacity: 1; left: 48%; top: 42%; }
+    75%  { opacity: 1; left: 58%; top: 44%; }
+    100% { opacity: 1; left: 58%; top: 44%; }
+  }
+
+  /* Scene: monitors (preview + live side by side) */
+  .va-scene[data-scene="monitors"] .mon-row {
+    display: flex; gap: 14px; align-items: center; justify-content: center;
+    width: 100%; max-width: 680px;
+  }
+  .mon {
+    flex: 1; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 6px; overflow: hidden;
+    opacity: 0;
+  }
+  .mon-head {
+    padding: 6px 10px; background: var(--bg-soft);
+    border-bottom: 1px solid var(--line);
+    font-size: 9.5px; font-weight: 700;
+    color: #8a93a6; letter-spacing: 0.18em; text-transform: uppercase;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .mon-head.on-air { color: #e8a89a; }
+  .mon-head.on-air .dot { width: 6px; height: 6px; border-radius: 50%; background: #c14a3a; animation: pulse 1.6s infinite; }
+  .mon-stage {
+    aspect-ratio: 16 / 9; display: flex; align-items: center; justify-content: center;
+    background: #000; color: #fff; padding: 8%; text-align: center;
+  }
+  .mon-stage.serif { font-family: 'Source Serif 4', serif; font-size: clamp(10px, 1.2vw, 14px); }
+  .mon-stage.chapel { background: #0b1530; color: #C89D4A; font-family: 'Segoe UI', sans-serif; font-size: clamp(10px, 1.2vw, 14px); font-weight: 500; }
+  .va-scene[data-scene="monitors"].active .mon:nth-child(1) { animation: vaFade .5s .6s forwards; }
+  .va-scene[data-scene="monitors"].active .mon:nth-child(3) { animation: vaFade .5s .8s forwards; }
+  .mon-transport {
+    display: flex; flex-direction: column; gap: 4px; opacity: 0;
+  }
+  .mon-transport button {
+    padding: 6px 10px; background: var(--panel); border: 1px solid var(--line);
+    color: var(--ink); font-size: 10px; font-weight: 600;
+    border-radius: 3px; cursor: default;
+  }
+  .mon-transport button.go { background: #e84545; color: #fff; border-color: #e84545; }
+  .va-scene[data-scene="monitors"].active .mon-transport { animation: vaFade .5s 1.1s forwards; }
+  .mon-transport button.go {
+    animation: goPulse 2.5s 2s ease-in-out infinite;
+  }
+  @keyframes goPulse {
+    0%, 100% { box-shadow: 0 0 0 rgba(232, 69, 69, 0); }
+    50%      { box-shadow: 0 0 18px rgba(232, 69, 69, 0.6); }
+  }
+  .va-space-key {
+    margin-top: 14px;
+    opacity: 0;
+  }
+  .va-scene[data-scene="monitors"].active .va-space-key { animation: vaFade .4s 1.5s forwards; }
+  .va-scene[data-scene="monitors"].active .va-space-key .va-key { animation: keyTap .5s 3s ease; }
+  /* Transfer beam from Preview → Live on Space press */
+  .mon-transport::before {
+    content: '';
+    position: absolute; left: 50%; top: 50%;
+    width: 0; height: 3px;
+    background: linear-gradient(90deg, var(--brand), var(--brand-2));
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    filter: blur(1px);
+    pointer-events: none;
+  }
+  .mon-transport { position: relative; }
+  .va-scene[data-scene="monitors"].active .mon-transport::before {
+    animation: beam 0.7s 3.1s ease-out forwards;
+  }
+  @keyframes beam {
+    0%   { width: 0;    opacity: 0; }
+    20%  { opacity: 1; }
+    70%  { width: 160px; opacity: 0.9; }
+    100% { width: 160px; opacity: 0; }
+  }
+
+  /* Scene: projector (fullscreen output) — cinematic serif reveal */
+  .va-scene[data-scene="projector"] {
+    background: radial-gradient(ellipse at center, #0f0f1a 0%, #000 80%);
+    padding-bottom: 72px;
+  }
+  .va-scene[data-scene="projector"] .proj-text {
+    font-family: 'Source Serif 4', serif;
+    font-size: clamp(18px, 3vw, 34px);
+    color: #fff; max-width: 80%; line-height: 1.45;
+    opacity: 0;
+    letter-spacing: -0.005em;
+  }
+  .va-scene[data-scene="projector"] .proj-ref {
+    margin-top: 28px;
+    font-family: 'Segoe UI', sans-serif;
+    font-size: clamp(10px, 1.1vw, 13px);
+    font-weight: 600; letter-spacing: 0.3em; text-transform: uppercase;
+    color: rgba(200, 157, 74, 0.9);
+    opacity: 0;
+    position: relative;
+  }
+  .va-scene[data-scene="projector"] .proj-ref::before,
+  .va-scene[data-scene="projector"] .proj-ref::after {
+    content: ''; display: inline-block;
+    width: 20px; height: 1px; background: rgba(200, 157, 74, 0.5);
+    veritcal-align: middle;
+    margin: 0 14px 2px;
+  }
+  .va-scene[data-scene="projector"].active .proj-text { animation: projFade 1.2s .7s forwards, projShine 3s 2s ease-in-out infinite; }
+  .va-scene[data-scene="projector"].active .proj-ref  { animation: vaFade 1s 1.8s forwards; }
+  @keyframes projFade {
+    from { opacity: 0; transform: translateY(8px); filter: blur(4px); }
+    to   { opacity: 1; transform: translateY(0); filter: blur(0); }
+  }
+  @keyframes projShine {
+    0%, 100% { text-shadow: 0 0 0 rgba(255, 255, 255, 0); }
+    50%      { text-shadow: 0 0 24px rgba(255, 255, 255, 0.18); }
+  }
+  /* A slow "spotlight" drift across the projector bg */
+  .va-scene[data-scene="projector"]::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at 30% 40%, rgba(200, 157, 74, 0.08), transparent 40%);
+    animation: spotDrift 6s ease-in-out infinite alternate;
+    pointer-events: none;
+  }
+  @keyframes spotDrift {
+    0%   { background-position: 30% 40%; transform: scale(1); }
+    100% { background-position: 70% 60%; transform: scale(1.1); }
+  }
+  .va-scene[data-scene="projector"] .va-caption { background: linear-gradient(to top, rgba(0,0,0,0.95), transparent); }
+
+  /* Scene: cta — cinematic close */
+  .va-scene[data-scene="cta"] {
+    background:
+      radial-gradient(circle at 30% 20%, rgba(46, 115, 109, 0.3), transparent 55%),
+      radial-gradient(circle at 75% 80%, rgba(200, 157, 74, 0.22), transparent 55%),
+      #0a0d14;
+  }
+  .va-scene[data-scene="cta"] .va-kicker {
+    font-size: clamp(10px, 1vw, 12px);
+    font-weight: 700; letter-spacing: 0.3em;
+    text-transform: uppercase; color: var(--brand);
+    margin-bottom: 12px; opacity: 0;
+  }
+  .va-scene[data-scene="cta"] h3 {
+    font-family: 'Source Serif 4', serif;
+    font-size: clamp(26px, 4.5vw, 54px); font-weight: 600;
+    color: #fff; margin: 0 0 10px; opacity: 0;
+    letter-spacing: -0.02em; line-height: 1.1;
+  }
+  .va-scene[data-scene="cta"] p { color: var(--ink-dim); margin: 0 0 28px; opacity: 0; font-size: clamp(12px, 1.4vw, 16px); }
+  .va-scene[data-scene="cta"] .va-cta-btn {
+    padding: 15px 30px; background: var(--brand); color: #1a1306;
+    font-weight: 700; border-radius: 10px;
+    font-size: clamp(13px, 1.5vw, 15px);
+    opacity: 0; transform: scale(0.9);
+    display: inline-flex; align-items: center; gap: 10px;
+  }
+  .va-scene[data-scene="cta"] .va-cta-btn svg { width: 16px; height: 16px; }
+  .va-scene[data-scene="cta"].active .va-kicker  { animation: vaFade .5s .1s forwards; }
+  .va-scene[data-scene="cta"].active h3          { animation: vaUp .7s .4s forwards; }
+  .va-scene[data-scene="cta"].active p           { animation: vaUp .6s .9s forwards; }
+  .va-scene[data-scene="cta"].active .va-cta-btn { animation: ctaPop .6s 1.3s forwards, ctaGlow 2s 2s ease-in-out infinite; }
+  @keyframes ctaPop  { to { opacity: 1; transform: scale(1); } }
+  @keyframes ctaGlow {
+    0%, 100% { box-shadow: 0 0 0 rgba(200, 157, 74, 0); }
+    50%      { box-shadow: 0 0 40px rgba(200, 157, 74, 0.5); }
+  }
+  .va-footer-marks {
+    position: absolute; bottom: 24px; left: 50%;
+    transform: translateX(-50%);
+    display: flex; gap: 20px;
+    font-size: 11px; color: var(--ink-dim);
+    opacity: 0;
+  }
+  .va-footer-marks span::before { content: '✓'; color: var(--brand); margin-right: 6px; font-weight: 700; }
+  .va-scene[data-scene="cta"].active .va-footer-marks { animation: vaFade .6s 2s forwards; }
+
+  .va-controls {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 14px; padding: 0 4px;
+    color: var(--ink-dim); font-size: 13px;
+  }
+  .va-controls button {
+    background: transparent; border: 1px solid var(--line);
+    color: var(--ink); padding: 6px 14px; border-radius: 6px;
+    font-size: 12px; cursor: pointer; font-family: inherit;
+  }
+  .va-controls button:hover { background: var(--panel); }
+  .va-dots { display: flex; gap: 6px; }
+  .va-dots button {
+    padding: 0; width: 8px; height: 8px; border-radius: 50%;
+    border: 0; background: var(--line); cursor: pointer;
+    transition: background .2s, transform .2s;
+  }
+  .va-dots button.active { background: var(--brand); transform: scale(1.3); }
+
+  /* ---------- App preview (live iframe of the operator console) ---------- */
+  .preview {
+    max-width: 1280px; margin: 120px auto;
+    padding: 0 24px;
+  }
+  .app-frame {
+    position: relative;
+    border-radius: var(--radius);
+    border: 1px solid var(--line);
+    background: var(--panel);
+    overflow: hidden;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.55);
+  }
+  .app-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px;
+    background: var(--bg-soft);
+    border-bottom: 1px solid var(--line);
+  }
+  .app-bar .shot-dot { width: 11px; height: 11px; border-radius: 50%; background: #3a4258; }
+  .app-bar-title {
+    margin-left: 12px;
+    font-size: 12px; color: var(--ink-dim);
+    font-family: 'Inter', sans-serif;
+  }
+  .app-bar-live {
+    margin-left: auto;
+    padding: 3px 10px; border-radius: 4px;
+    background: rgba(193, 74, 58, 0.15);
+    color: #e8a89a;
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.18em; text-transform: uppercase;
+  }
+  .app-bar-live::before {
+    content: ''; display: inline-block;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #c14a3a; margin-right: 6px; veritcal-align: middle;
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+  .app-embed {
+    position: relative;
+    aspect-ratio: 1366 / 820;
+    width: 100%;
+    overflow: hidden;
+    background: #000;
+  }
+  .app-embed iframe {
+    position: absolute;
+    top: 0; left: 0;
+    width: 1366px;
+    height: 820px;
+    border: 0;
+    transform-origin: top left;
+    /* Scaled by JS to fit container; fallback scale for initial paint */
+    transform: scale(0.9);
+    pointer-events: none;   /* preview only */
+  }
+  .app-embed-overlay {
+    position: absolute; inset: 0;
+    display: flex; align-items: flex-end; justify-content: center;
+    background: linear-gradient(to bottom, transparent 60%, rgba(10, 13, 20, 0.6));
+    pointer-events: none;
+    opacity: 0; transition: opacity .2s;
+  }
+  .app-frame:hover .app-embed-overlay { opacity: 1; }
+  .app-embed-overlay a {
+    margin-bottom: 24px;
+    padding: 12px 22px;
+    background: var(--brand);
+    color: #1a1306;
+    font-weight: 600; font-size: 14px;
+    border-radius: 10px;
+    pointer-events: auto;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  }
+  .app-embed-overlay a:hover { filter: brightness(1.1); }
+  .preview-caption {
+    text-align: center;
+    margin-top: 20px;
+    color: var(--ink-dim);
+    font-size: 13px;
+  }
+  .preview-caption kbd {
+    display: inline-block;
+    padding: 2px 8px;
+    margin: 0 2px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    font-family: 'Inter', monospace;
+    font-size: 11px; color: var(--ink);
+  }
+
+  /* ---------- Download section ---------- */
+  .download {
+    max-width: 1000px; margin: 120px auto;
+    padding: 60px 40px;
+    background: linear-gradient(135deg, rgba(200, 157, 74, 0.08), rgba(46, 115, 109, 0.08));
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .download::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 0%, rgba(200, 157, 74, 0.1), transparent 60%);
+    pointer-events: none;
+  }
+  .download h2 {
+    font-family: 'Source Serif 4', serif;
+    font-size: clamp(32px, 4vw, 42px);
+    margin: 0 0 16px;
+    position: relative;
+  }
+  .download p { color: var(--ink-dim); margin: 0 0 32px; position: relative; }
+  .download-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px; max-width: 700px; margin: 0 auto;
+    position: relative;
+  }
+  .dl-btn {
+    display: flex; align-items: center; gap: 14px;
+    padding: 18px 22px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    text-align: left;
+    transition: border-color .2s, transform .2s;
+  }
+  .dl-btn:hover:not(.disabled) { border-color: var(--brand); transform: translateY(-2px); }
+  .dl-btn.disabled { opacity: 0.6; cursor: not-allowed; }
+  .dl-btn svg { width: 28px; height: 28px; flex-shrink: 0; color: var(--brand); }
+  .dl-btn-text { display: flex; flex-direction: column; }
+  .dl-btn-label { font-size: 11px; color: var(--ink-dim); letter-spacing: 0.1em; text-transform: uppercase; }
+  .dl-btn-name { font-weight: 600; font-size: 15px; margin-top: 2px; }
+  .dl-btn-note { font-size: 11px; color: var(--brand); margin-top: 2px; font-weight: 500; }
+
+  .coming-soon {
+    display: inline-block;
+    margin-top: 28px;
+    padding: 8px 16px;
+    background: rgba(193, 74, 58, 0.1);
+    border: 1px solid rgba(193, 74, 58, 0.3);
+    border-radius: 999px;
+    font-size: 12px; color: #e8a89a;
+    letter-spacing: 0.1em; text-transform: uppercase;
+  }
+
+  /* ---------- Testimonials ---------- */
+  .testimonials {
+    max-width: 1200px; margin: 140px auto;
+    padding: 0 24px;
+  }
+  .t-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+  }
+  .testimonial {
+    position: relative;
+    padding: 32px 28px 28px;
+    background: rgba(21, 27, 41, 0.55);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    display: flex; flex-direction: column; gap: 20px;
+    transition: transform .3s var(--ease), border-color .25s;
+  }
+  .testimonial:hover {
+    transform: translateY(-4px);
+    border-color: rgba(200, 157, 74, 0.35);
+  }
+  .testimonial::before {
+    content: '"';
+    position: absolute; top: 8px; left: 24px;
+    font-family: 'Source Serif 4', serif;
+    font-size: 76px; font-weight: 700; line-height: 1;
+    color: var(--brand); opacity: 0.28;
+  }
+  .t-quote {
+    font-family: 'Source Serif 4', serif;
+    font-size: var(--t-lg); line-height: 1.5;
+    font-style: italic; color: var(--ink);
+    margin: 0; position: relative;
+  }
+  .t-stars { color: var(--brand); font-size: 14px; letter-spacing: 2px; }
+  .t-author {
+    display: flex; align-items: center; gap: 12px;
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid var(--line-soft);
+  }
+  .t-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px; color: #1a1306;
+    background: linear-gradient(135deg, var(--brand), var(--brand-2));
+    flex-shrink: 0;
+  }
+  .t-meta { display: flex; flex-direction: column; }
+  .t-name { font-weight: 600; font-size: var(--t-sm); color: var(--ink); }
+  .t-role { font-size: var(--t-xs); color: var(--ink-faint); }
+
+  /* ---------- FAQ ---------- */
+  .faq {
+    max-width: 820px; margin: 140px auto;
+    padding: 0 24px;
+  }
+  .faq-list {
+    display: flex; flex-direction: column;
+    gap: 12px;
+  }
+  .faq-item {
+    background: rgba(21, 27, 41, 0.45);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 0;
+    transition: border-color .2s, background .2s;
+  }
+  .faq-item[open] { border-color: rgba(200, 157, 74, 0.4); background: rgba(21, 27, 41, 0.7); }
+  .faq-item summary {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 20px;
+    padding: 20px 24px;
+    cursor: pointer;
+    font-weight: 600; font-size: var(--t-md);
+    color: var(--ink);
+    list-style: none;
+  }
+  .faq-item summary::-webkit-details-marker { display: none; }
+  .faq-item summary::after {
+    content: ''; flex-shrink: 0;
+    width: 10px; height: 10px;
+    border-right: 2px solid var(--brand);
+    border-bottom: 2px solid var(--brand);
+    transform: rotate(45deg);
+    transition: transform .25s var(--ease);
+  }
+  .faq-item[open] summary::after { transform: rotate(-135deg); }
+  .faq-item p {
+    margin: 0;
+    padding: 0 24px 22px;
+    color: var(--ink-dim);
+    font-size: var(--t-sm);
+    line-height: 1.65;
+  }
+
+  /* ---------- Professional footer ---------- */
+  .footer-v2 {
+    margin-top: 140px;
+    padding: 60px 24px 30px;
+    border-top: 1px solid var(--line);
+    background: linear-gradient(to bottom, transparent, rgba(8, 9, 15, 0.8));
+  }
+  .footer-grid {
+    max-width: 1200px; margin: 0 auto;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 40px 32px;
+    padding-bottom: 40px;
+  }
+  .footer-col h5 {
+    font-size: var(--t-xs); font-weight: 700;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--ink-faint); margin: 0 0 16px;
+  }
+  .footer-col a, .footer-col p {
+    display: block;
+    font-size: var(--t-sm); color: var(--ink-dim);
+    margin-bottom: 10px; line-height: 1.55;
+    transition: color .18s;
+  }
+  .footer-col a:hover { color: var(--brand); }
+  .footer-brand {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 14px;
+    font-family: 'Source Serif 4', serif;
+    font-weight: 600; font-size: var(--t-xl); color: var(--ink);
+  }
+  .footer-bottom {
+    max-width: 1200px; margin: 0 auto;
+    padding-top: 24px;
+    border-top: 1px solid var(--line-soft);
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 12px;
+    font-size: var(--t-xs); color: var(--ink-faint);
+  }
+  .footer-bottom a { color: var(--brand); }
+  .footer-bottom a:hover { text-decoration: underline; }
+  .footer-socials { display: flex; gap: 12px; }
+  .footer-socials a {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: rgba(21, 27, 41, 0.7);
+    border: 1px solid var(--line);
+    color: var(--ink-dim);
+    transition: transform .2s, border-color .2s, color .2s;
+  }
+  .footer-socials a:hover {
+    transform: translateY(-2px);
+    border-color: var(--brand); color: var(--brand);
+  }
+  .footer-socials svg { width: 14px; height: 14px; }
+
+  @media (max-width: 720px) {
+    .nav-links { display: none; }
+    .hero { padding: 60px 20px 40px; }
+    .features, .download, .testimonials, .faq { margin: 80px auto; }
+    .download { padding: 40px 24px; }
+    .footer-grid { grid-template-columns: 1fr 1fr; }
+    .footer-grid > .footer-col:first-child { grid-column: 1 / -1; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= NAV ================= -->
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <span>Play &amp; Worship</span>
+    </div>
+    <div class="nav-links">
+      <a href="#watch">Watch</a>
+      <a href="#features">Features</a>
+      <a href="#preview">Console</a>
+      <a href="#stories">Stories</a>
+      <a href="#faq">FAQ</a>
+      <a href="#pricing">Pricing</a>
+    </div>
+    <a href="#pricing" class="nav-cta">Get License</a>
+  </div>
+</nav>
+
+<!-- ================= HERO ================= -->
+<section class="hero">
+  <span class="tag"><span class="dot"></span>Built for Ministry · Licensed Use</span>
+  <h1>Worship presentation,<br><span class="accent">made simple.</span></h1>
+  <p class="lede">
+    A modern, browser-based presentation app built for churches. Songs, hymns, scripture,
+    PPTX, PDF, video, and images — all from one clean operator console with a dedicated live projector window.
+    Your media library stays on-device and survives reloads.
+  </p>
+  <div class="hero-ctas">
+    <a href="#download" class="btn btn-primary">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+      Download the App
+    </a>
+    <a href="./app/" class="btn btn-ghost" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
+      Try in Browser
+    </a>
+  </div>
+
+  <!-- Screenshot mock -->
+  <div class="shot">
+    <div class="shot-bar">
+      <span class="shot-dot"></span><span class="shot-dot"></span><span class="shot-dot"></span>
+    </div>
+    <div class="shot-body">
+      <div class="shot-verse">"For God so loved the world, that he gave his only begotten Son…"</div>
+      <div class="shot-ref">John 3:16 · WEB</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= STATS STRIP ================= -->
+<section class="stats reveal">
+  <div class="stat">
+    <div class="stat-num" data-count="66">0</div>
+    <div class="stat-label">Bible Books</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num" data-count="5">0</div>
+    <div class="stat-label">Translations</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num" data-count="4">0</div>
+    <div class="stat-label">Media Formats</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num"><span data-count="100">0</span>%</div>
+    <div class="stat-label">Offline Ready</div>
+  </div>
+</section>
+
+<!-- ================= FEATURE PRESENTATION ================= -->
+<section class="video-ad reveal" id="watch">
+  <div class="section-head">
+    <h2>The Presentation.</h2>
+    <p>A cinematic tour of Play &amp; Worship in five chapters — no audio, just the features that make Sunday easier.</p>
+  </div>
+
+  <div class="va-frame">
+    <div class="va-progress"><span id="va-bar"></span></div>
+
+    <!-- 1. Intro — emotional hook, then logo reveal + pillars -->
+    <div class="va-scene active" data-scene="intro">
+      <div class="va-particles">
+        <span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <div class="va-hook">
+        <div class="va-hook-text">"On Sunday morning, every second counts."</div>
+      </div>
+      <div class="va-stage">
+        <div class="va-logo"></div>
+        <h3>Introducing Play &amp; Worship</h3>
+        <p>The complete operator console for modern worship.</p>
+        <div class="va-pillars">
+          <span class="va-pillar">Songs &amp; Hymns</span>
+          <span class="va-pillar">Scripture</span>
+          <span class="va-pillar">Media</span>
+          <span class="va-pillar">Schedule</span>
+          <span class="va-pillar">Live Projector</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Library (Songs + Hymns) -->
+    <div class="va-scene" data-scene="library">
+      <div class="va-chapter">
+        <div class="va-chapter-num">01</div>
+        <div class="va-chapter-line">
+          <div class="va-chapter-kicker">Chapter One</div>
+          <div class="va-chapter-title">Your Library</div>
+        </div>
+      </div>
+
+      <svg class="va-cursor" viewBox="0 0 20 24"><path d="M2 2 L2 18 L6 14 L8 20 L11 19 L9 13 L14 13 Z" fill="#fff" stroke="#000" stroke-width="0.7"/></svg>
+
+      <div class="mock" style="width: min(56%, 460px);">
+        <div class="mock-tabs">
+          <div class="mock-tab active">Songs</div>
+          <div class="mock-tab">Hymn</div>
+          <div class="mock-tab">Scripture</div>
+          <div class="mock-tab">Media</div>
+        </div>
+        <div class="mock-search typing">Search songs…</div>
+        <div class="mock-row active">
+          <div class="mock-row-ico"></div>
+          <div class="mock-row-title">God Is Here<div class="mock-row-sub">Noel Robinson · Key D · 11 slides</div></div>
+        </div>
+        <div class="mock-row">
+          <div class="mock-row-ico"></div>
+          <div class="mock-row-title">I Give You Glory<div class="mock-row-sub">Outbreakband · Key G · 9 slides</div></div>
+        </div>
+        <div class="mock-row">
+          <div class="mock-row-ico"></div>
+          <div class="mock-row-title">Still<div class="mock-row-sub">Hillsong · CCLI 2562880 · 4 slides</div></div>
+        </div>
+        <div class="mock-row">
+          <div class="mock-row-ico"></div>
+          <div class="mock-row-title">10,000 Reasons<div class="mock-row-sub">Matt Redman · Key C · 8 slides</div></div>
+        </div>
+        <div class="mock-row">
+          <div class="mock-row-ico"></div>
+          <div class="mock-row-title">Way Maker<div class="mock-row-sub">Sinach · Key B♭ · 7 slides</div></div>
+        </div>
+        <div class="mock-row">
+          <div class="mock-row-ico"></div>
+          <div class="mock-row-title">Build My Life<div class="mock-row-sub">Pat Barrett · Key E · 6 slides</div></div>
+        </div>
+      </div>
+      <div class="va-caption">
+        <div class="va-label">The Library</div>
+        <h4 class="va-title">Every song, every hymn, one click away.</h4>
+        <p class="va-desc">Full editor with auto slide-splitting · CCLI / key metadata · themeable backgrounds.</p>
+      </div>
+    </div>
+
+    <!-- 3. Scripture -->
+    <div class="va-scene" data-scene="scripture">
+      <div class="va-chapter">
+        <div class="va-chapter-num">02</div>
+        <div class="va-chapter-line">
+          <div class="va-chapter-kicker">Chapter Two</div>
+          <div class="va-chapter-title">The Word, Instantly</div>
+        </div>
+      </div>
+
+      <svg class="va-cursor" viewBox="0 0 20 24"><path d="M2 2 L2 18 L6 14 L8 20 L11 19 L9 13 L14 13 Z" fill="#fff" stroke="#000" stroke-width="0.7"/></svg>
+      <span class="va-click"></span>
+
+      <div class="mock" style="width: min(62%, 520px);">
+        <div class="mock-bible-head">
+          <div class="mock-select">John ▾</div>
+          <div class="mock-select">3 ▾</div>
+        </div>
+        <div class="mock-chips">
+          <span class="mock-chip active">WEB</span>
+          <span class="mock-chip">KJV</span>
+          <span class="mock-chip">ASV</span>
+          <span class="mock-chip">YLT</span>
+          <span class="mock-chip">BBE</span>
+        </div>
+        <div class="mock-verse"><span class="vnum">13</span>And no man hath ascended up to heaven, but he that came down from heaven…</div>
+        <div class="mock-verse"><span class="vnum">14</span>As Moses lifted up the serpent in the wilderness…</div>
+        <div class="mock-verse"><span class="vnum">15</span>…that whosoever believeth in him should not perish, but have eternal life.</div>
+        <div class="mock-verse highlight"><span class="vnum">16</span>For God so loved the world, that he gave his only begotten Son…</div>
+        <div class="mock-verse"><span class="vnum">17</span>For God sent not his Son into the world to condemn the world…</div>
+        <div class="mock-verse"><span class="vnum">18</span>He that believeth on him is not condemned: but he that believeth not…</div>
+      </div>
+      <div class="va-caption">
+        <div class="va-label">Scripture</div>
+        <h4 class="va-title">66 books. 5 translations. Zero lag.</h4>
+        <p class="va-desc">Jump to any reference · select range or single verse · auto-paginate long passages · live-edit font, text color, and background · colored verse numbers.</p>
+      </div>
+    </div>
+
+    <!-- 4. Schedule -->
+    <div class="va-scene" data-scene="schedule">
+      <div class="va-chapter">
+        <div class="va-chapter-num">03</div>
+        <div class="va-chapter-line">
+          <div class="va-chapter-kicker">Chapter Three</div>
+          <div class="va-chapter-title">Your Service, Scripted</div>
+        </div>
+      </div>
+
+      <svg class="va-cursor" viewBox="0 0 20 24"><path d="M2 2 L2 18 L6 14 L8 20 L11 19 L9 13 L14 13 Z" fill="#fff" stroke="#000" stroke-width="0.7"/></svg>
+
+      <div class="mock mock-sched">
+        <div class="mock-sect-label">Songs</div>
+        <div class="mock-sched-row">
+          <div class="mock-card dragging">I Give You Glory <span class="slide-count">· 9 slides</span></div>
+          <div class="mock-card">Still <span class="slide-count">· 4 slides</span></div>
+          <div class="mock-card">10,000 Reasons <span class="slide-count">· 8 slides</span></div>
+          <div class="mock-card">God Is Here <span class="slide-count">· 11 slides</span></div>
+        </div>
+        <div class="mock-sect-label">Hymns</div>
+        <div class="mock-sched-row">
+          <div class="mock-card">Amazing Grace <span class="slide-count">· 5 slides</span></div>
+          <div class="mock-card">How Great Thou Art <span class="slide-count">· 4 slides</span></div>
+          <div class="mock-card">Praise Him Praise Him <span class="slide-count">· 4 slides</span></div>
+        </div>
+        <div class="mock-sect-label">Scripture</div>
+        <div class="mock-sched-row">
+          <div class="mock-card">Psalm 23 <span class="slide-count">· KJV</span></div>
+          <div class="mock-card">John 3:16 <span class="slide-count">· WEB</span></div>
+          <div class="mock-card">Romans 8:28 <span class="slide-count">· ASV</span></div>
+        </div>
+        <div class="mock-sect-label">Media</div>
+        <div class="mock-sched-row">
+          <div class="mock-card">Welcome Slide <span class="slide-count">· PDF</span></div>
+          <div class="mock-card live">Offering Video <span class="live-badge">LIVE</span></div>
+          <div class="mock-card">Sermon Notes <span class="slide-count">· PPTX</span></div>
+        </div>
+      </div>
+      <div class="va-caption">
+        <div class="va-label">The Schedule</div>
+        <h4 class="va-title">Plan the whole service. Run it without thinking.</h4>
+        <p class="va-desc">Drag to reorder · double-click to go live · Go Live routes to whatever you just clicked · arrow keys stay inside the current item.</p>
+      </div>
+    </div>
+
+    <!-- 5. Monitors (Preview + Live) -->
+    <div class="va-scene" data-scene="monitors">
+      <div class="va-chapter">
+        <div class="va-chapter-num">04</div>
+        <div class="va-chapter-line">
+          <div class="va-chapter-kicker">Chapter Four</div>
+          <div class="va-chapter-title">Preview · Then Live</div>
+        </div>
+      </div>
+
+      <div class="mon-row">
+        <div class="mon">
+          <div class="mon-head">Preview</div>
+          <div class="mon-stage serif">"For God so loved the world…"</div>
+        </div>
+        <div class="mon-transport">
+          <button>◀ Prev</button>
+          <button class="go">▶ Go</button>
+          <button>Next ▶</button>
+        </div>
+        <div class="mon-stage-wrap mon" style="flex: 1;">
+          <div class="mon-head on-air"><span class="dot"></span>Live · On Air</div>
+          <div class="mon-stage chapel">Amazing grace!<br>How sweet the sound</div>
+        </div>
+      </div>
+      <div class="va-space-key">
+        <span style="font-size: 10px; color: var(--ink-dim); margin-right: 10px; letter-spacing: 0.15em; text-transform: uppercase;">Press</span>
+        <span class="va-key">Space</span>
+      </div>
+
+      <div class="va-caption">
+        <div class="va-label">Dual Monitors</div>
+        <h4 class="va-title">See what's next. Control what's on air.</h4>
+        <p class="va-desc">Preview stays private · press Space to promote it to Live — congregation sees only Live.</p>
+      </div>
+    </div>
+
+    <!-- 6. Projector output -->
+    <div class="va-scene" data-scene="projector">
+      <div class="va-chapter">
+        <div class="va-chapter-num">05</div>
+        <div class="va-chapter-line">
+          <div class="va-chapter-kicker">Chapter Five</div>
+          <div class="va-chapter-title">On the Big Screen</div>
+        </div>
+      </div>
+
+      <div class="proj-text">"For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life."</div>
+      <div class="proj-ref">John 3:16 · WEB</div>
+      <div class="va-caption">
+        <div class="va-label">The Projector</div>
+        <h4 class="va-title">A pulpit-ready fullscreen display.</h4>
+        <p class="va-desc">Dedicated projector window · press F for fullscreen · smooth fade transitions.</p>
+      </div>
+    </div>
+
+    <!-- 7. CTA — cinematic close -->
+    <div class="va-scene" data-scene="cta">
+      <div class="va-particles">
+        <span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <div class="va-kicker">The End · Or the Beginning</div>
+      <h3>Every minute you save<br>is a minute for worship.</h3>
+      <p>One license · one console · every Sunday.</p>
+      <a href="#download" class="va-cta-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+        Download Play &amp; Worship
+      </a>
+      <div class="va-footer-marks">
+        <span>No install</span>
+        <span>Offline ready</span>
+        <span>No upload</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="va-controls">
+    <span id="va-counter">Feature 1 / 7 · Introduction</span>
+    <div class="va-dots" id="va-dots"></div>
+    <button id="va-play" type="button">Pause</button>
+  </div>
+</section>
+
+<!-- ================= FEATURES ================= -->
+<section class="features reveal" id="features">
+  <div class="section-head">
+    <h2>Everything you need on a Sunday morning.</h2>
+    <p>Built for operators who want less clicking and more worshipping.</p>
+  </div>
+  <div class="grid">
+
+    <div class="card">
+      <div class="card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>
+      <h3>Songs &amp; Hymns</h3>
+      <p>Full-featured editor with auto slide splitting, chord/CCLI metadata, themeable backgrounds, and an English / Tagalog language filter.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V6a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H6.5a2.5 2.5 0 0 1 0-5H20"/></svg></div>
+      <h3>Scripture</h3>
+      <p>All 66 books across 5 translations (WEB, KJV, ASV, YLT, BBE). Jump-to-reference search, paginated long passages, colored verse numbers, and live edit of font size, text color, and background — every scripture slide updates instantly.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="1.5"/><circle cx="8.5" cy="10.5" r="1.5"/><path d="m21 16-5-5-9 8"/></svg></div>
+      <h3>Media Library</h3>
+      <p>Import PPTX, PDF, video, and images (JPG / PNG / WEBP / GIF). Stored locally in IndexedDB — your full library survives a browser reload, no uploads required.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="13" rx="2"/><path d="M8 21h8M12 18v3"/></svg></div>
+      <h3>Live Projector</h3>
+      <p>Dedicated output window for the sanctuary display. Drag to the secondary monitor, press F for fullscreen. Smooth motion backgrounds, blackout, and countdown — all one keypress away.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2v6h6"/><path d="M20 10H4v12h16V10z"/><path d="M4 10V4a2 2 0 0 1 2-2h8"/><path d="M12 13v6M9 16h6"/></svg></div>
+      <h3>Service Schedule</h3>
+      <p>Build your service order, drag to reorder, double-click to go live. Go Live routes to whatever you just clicked — slide, verse, image, or video — and arrow keys stay inside the current item so a stray tap never jumps to the next song.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg></div>
+      <h3>No Install · Keyboard-First</h3>
+      <p>Runs in any modern browser. Songs, media, settings, and schedule stay on your device — no uploads, no tracking. Quick keys: <b>N</b> new song, <b>I</b> import, <b>S / H / B / M</b> switch tabs, <b>F1</b> countdown, <b>Ctrl+S</b> confirms auto-save.</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ================= APP PREVIEW (live) ================= -->
+<section class="preview reveal" id="preview">
+  <div class="section-head">
+    <h2>The Operator Console.</h2>
+    <p>This is the actual app — a live preview. Library on the left, workspace in the middle, Preview + Live monitors on the right, service schedule below.</p>
+  </div>
+
+  <div class="app-frame">
+    <div class="app-bar">
+      <span class="shot-dot"></span><span class="shot-dot"></span><span class="shot-dot"></span>
+      <span class="app-bar-title">Play &amp; Worship — Operator Console</span>
+      <span class="app-bar-live">On Air</span>
+    </div>
+    <div class="app-embed" id="app-embed">
+      <iframe src="./app/index.html?demo=1" title="Play &amp; Worship operator console preview" loading="lazy" scrolling="no"></iframe>
+      <div class="app-embed-overlay">
+        <a href="./app/" target="_blank" rel="noopener">Open the app →</a>
+      </div>
+    </div>
+  </div>
+
+  <p class="preview-caption">
+    Interactive demo disabled in preview. Hover to open in a new tab.
+    Keyboard in-app: <kbd>Space</kbd> Go · <kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd> Navigate · <kbd>N</kbd> New · <kbd>I</kbd> Import · <kbd>S</kbd>/<kbd>H</kbd>/<kbd>B</kbd>/<kbd>M</kbd> Tabs · <kbd>F1</kbd> Countdown · <kbd>Esc</kbd> Clear
+  </p>
+</section>
+
+<!-- ================= PRICING / ACCESS ================= -->
+<section class="download reveal" id="pricing">
+  <h2>Get Your License</h2>
+  <p>Play &amp; Worship is a licensed worship tool. Every ticket helps fund ongoing development and supports the ministries behind it.</p>
+
+  <div class="download-grid">
+
+    <a href="mailto:licensing@playandworship.app?subject=Play%20%26%20Worship%20License%20%E2%80%94%20Single%20Church" class="dl-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18v10H3z"/><path d="m3 7 9 6 9-6"/></svg>
+      <div class="dl-btn-text">
+        <span class="dl-btn-label">Single Church</span>
+        <span class="dl-btn-name">Request License</span>
+        <span class="dl-btn-note" style="color: var(--ok);">One operator account</span>
+      </div>
+    </a>
+
+    <a href="mailto:licensing@playandworship.app?subject=Play%20%26%20Worship%20License%20%E2%80%94%20Multi-Site" class="dl-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h1M9 13h1M9 17h1M14 9h1M14 13h1M14 17h1"/></svg>
+      <div class="dl-btn-text">
+        <span class="dl-btn-label">Multi-Site</span>
+        <span class="dl-btn-name">Request License</span>
+        <span class="dl-btn-note" style="color: var(--ok);">For networks of churches</span>
+      </div>
+    </a>
+
+    <a href="mailto:licensing@playandworship.app?subject=Play%20%26%20Worship%20%E2%80%94%20Ministry%20Pricing" class="dl-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      <div class="dl-btn-text">
+        <span class="dl-btn-label">Ministry Partner</span>
+        <span class="dl-btn-name">Get in Touch</span>
+        <span class="dl-btn-note">Flexible for small ministries</span>
+      </div>
+    </a>
+
+  </div>
+
+  <div class="coming-soon">Every license supports our ministry work</div>
+</section>
+
+<!-- ================= TESTIMONIALS ================= -->
+<section class="testimonials reveal" id="stories">
+  <div class="section-head">
+    <h2>Trusted on Sunday mornings.</h2>
+    <p>Worship operators from churches of all sizes rely on Play &amp; Worship for clarity, speed, and peace of mind.</p>
+  </div>
+  <div class="t-grid">
+
+    <div class="testimonial">
+      <div class="t-stars">★★★★★</div>
+      <p class="t-quote">We cut our Sunday morning prep time in half. Loading the service once and pressing Space through it is genuinely how it should feel.</p>
+      <div class="t-author">
+        <div class="t-avatar">MT</div>
+        <div class="t-meta">
+          <span class="t-name">Maria Tolentino</span>
+          <span class="t-role">Worship Tech · Grace Community</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="testimonial">
+      <div class="t-stars">★★★★★</div>
+      <p class="t-quote">The Bible browser alone is worth it. Jumping to a reference mid-sermon and having it live in two clicks used to be a dream.</p>
+      <div class="t-author">
+        <div class="t-avatar">DR</div>
+        <div class="t-meta">
+          <span class="t-name">David Ruiz</span>
+          <span class="t-role">Media Lead · Living Hope Chapel</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="testimonial">
+      <div class="t-stars">★★★★★</div>
+      <p class="t-quote">I onboarded a brand-new volunteer last week in 15 minutes. The preview/live monitors just make sense — nobody has to explain twice.</p>
+      <div class="t-author">
+        <div class="t-avatar">AB</div>
+        <div class="t-meta">
+          <span class="t-name">Ana Balonon</span>
+          <span class="t-role">Pastor · Calvary Baptist</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ================= FAQ ================= -->
+<section class="faq reveal" id="faq">
+  <div class="section-head">
+    <h2>Questions, answered.</h2>
+    <p>Everything you need to know before Sunday morning.</p>
+  </div>
+  <div class="faq-list">
+
+    <details class="faq-item">
+      <summary>How do I get an account?</summary>
+      <p>Request a license via the <a href="#pricing">Pricing</a> section. Each license unlocks one operator account for the web app and (soon) the desktop build. Your sign-in credentials are delivered once the license is activated.</p>
+    </details>
+
+    <details class="faq-item">
+      <summary>Why is Play &amp; Worship a paid tool?</summary>
+      <p>Every license directly supports the ministries behind Play &amp; Worship and funds ongoing development — new features, updates, and operator support. It's a small investment that keeps the tool alive for the churches that depend on it every Sunday.</p>
+    </details>
+
+    <details class="faq-item">
+      <summary>Do I need an internet connection to use it?</summary>
+      <p>Only for the Scripture browser (which fetches verses from a trusted Bible source). Everything else — songs, media, PPTX/PDF/images, videos, the projector — runs fully offline. Your full library is stored locally in IndexedDB, so it's still there after a browser reload.</p>
+    </details>
+
+    <details class="faq-item">
+      <summary>How do I run it on a second screen / projector?</summary>
+      <p>Click <b>Live Output</b> in the toolbar. A dedicated projector window opens that you drag to your second display, then press <b>F</b> for fullscreen. The operator console stays on your laptop — the congregation only sees the projector window.</p>
+    </details>
+
+    <details class="faq-item">
+      <summary>Does it support PowerPoint, PDF, video, and images?</summary>
+      <p>Yes to all four. PPTX shows the first image + text per slide (best for simple decks); for pixel-perfect rendering, export to PDF first. Video clips play directly on the projector with loop/mute controls. Images (JPG / PNG / WEBP / GIF / BMP) are added as single-slide decks that you can drop straight into your schedule.</p>
+    </details>
+
+    <details class="faq-item">
+      <summary>Can I style scripture passages?</summary>
+      <p>Yes — open a scripture item in the workspace and use the three buttons next to <b>Verses / slide</b>: font size, text color, and background color. Changes save to that passage instantly and push to the projector if it's live. Verse numbers are highlighted in gold by default so the congregation can easily track reference points in multi-verse slides.</p>
+    </details>
+
+    <details class="faq-item">
+      <summary>Can I import songs from another tool?</summary>
+      <p>Use <b>Import Song</b> and paste lyrics with <code>[Verse 1]</code> / <code>[Chorus]</code> markers. Play &amp; Worship auto-detects section headers and splits the song into slide-ready chunks. Plain lyrics without markers work too — blank lines become new slides.</p>
+    </details>
+
+    <details class="faq-item">
+      <summary>Do you offer ministry or multi-site pricing?</summary>
+      <p>Yes. Reach out via the <a href="#pricing">Pricing</a> section with a short note about your context — smaller congregations and church networks have flexible options available.</p>
+    </details>
+
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer class="footer-v2">
+  <div class="footer-grid">
+
+    <div class="footer-col">
+      <div class="footer-brand">
+        <div class="brand-mark" style="width: 30px; height: 30px; border-radius: 8px; background: url('./assets/logo.svg') center/cover no-repeat;"></div>
+        <span>Play &amp; Worship</span>
+      </div>
+      <p>A modern, licensed worship presentation tool built for the operator's desk. Songs, hymns, scripture, media, and a dedicated live projector — from one clean console.</p>
+    </div>
+
+    <div class="footer-col">
+      <h5>Product</h5>
+      <a href="#watch">Presentation</a>
+      <a href="#features">Features</a>
+      <a href="#preview">Console</a>
+      <a href="#pricing">Pricing</a>
+    </div>
+
+    <div class="footer-col">
+      <h5>Support</h5>
+      <a href="mailto:support@playandworship.app">Contact Support</a>
+      <a href="mailto:licensing@playandworship.app">Licensing</a>
+      <a href="#faq">FAQ</a>
+      <a href="#stories">Testimonials</a>
+    </div>
+
+    <div class="footer-col">
+      <h5>Legal</h5>
+      <a href="#">Terms of Use</a>
+      <a href="#">Privacy</a>
+      <a href="#">License Agreement</a>
+    </div>
+
+  </div>
+
+  <div class="footer-bottom">
+    <span>© 2026 Play &amp; Worship · Created by Ronnie Balonon Jr. · All rights reserved.</span>
+    <div class="footer-socials">
+      <a href="mailto:hello@playandworship.app" aria-label="Email us">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+      </a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // (Landing has no loader — "Try in Browser" opens the app in a new tab,
+  //  where the login gate appears. The splash loader runs after login.)
+
+  // Scroll reveal — observe any .reveal element, add .in once visible.
+  (function () {
+    const targets = document.querySelectorAll('.reveal');
+    if (!('IntersectionObserver' in window) || !targets.length) {
+      targets.forEach(t => t.classList.add('in'));
+      return;
+    }
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (e.isIntersecting) {
+          e.target.classList.add('in');
+          io.unobserve(e.target);
+        }
+      }
+    }, { threshold: 0.15 });
+    targets.forEach(t => io.observe(t));
+  })();
+
+  // Nav scroll state — compact on scroll.
+  (function () {
+    const nav = document.querySelector('.nav');
+    if (!nav) return;
+    const update = () => nav.classList.toggle('scrolled', window.scrollY > 20);
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+  })();
+
+  // Animated stat counters — count up when the stats strip enters view.
+  (function () {
+    const nums = document.querySelectorAll('.stat-num [data-count], .stat-num[data-count]');
+    if (!nums.length || !('IntersectionObserver' in window)) return;
+    const animate = (el) => {
+      const target = parseInt(el.dataset.count, 10);
+      if (!Number.isFinite(target)) return;
+      const dur = 1400;
+      const start = performance.now();
+      const tick = (now) => {
+        const p = Math.min(1, (now - start) / dur);
+        const eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.round(target * eased);
+        if (p < 1) requestAnimationFrame(tick);
+        else el.textContent = target;
+      };
+      requestAnimationFrame(tick);
+    };
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) if (e.isIntersecting) { animate(e.target); io.unobserve(e.target); }
+    }, { threshold: 0.4 });
+    nums.forEach(n => io.observe(n));
+  })();
+
+  // Scale the embedded app iframe to fit its container while keeping
+  // the app's natural 1366px viewport layout intact.
+  (function () {
+    const wrap = document.getElementById('app-embed');
+    if (!wrap) return;
+    const iframe = wrap.querySelector('iframe');
+    const fit = () => {
+      const w = wrap.clientWidth;
+      const scale = Math.min(1, w / 1366);
+      iframe.style.transform = `scale(${scale})`;
+      iframe.style.width = '1366px';
+      iframe.style.height = '820px';
+      wrap.style.height = `${820 * scale}px`;
+    };
+    fit();
+    window.addEventListener('resize', fit);
+  })();
+
+  // Auto-cycling feature presentation.
+  (function () {
+    const scenes = [
+      { name: 'intro',     label: 'Cold Open',                 duration: 6500 },
+      { name: 'library',   label: 'Ch. 01 · Your Library',     duration: 6500 },
+      { name: 'scripture', label: 'Ch. 02 · The Word',          duration: 6500 },
+      { name: 'schedule',  label: 'Ch. 03 · The Schedule',      duration: 6500 },
+      { name: 'monitors',  label: 'Ch. 04 · Preview + Live',    duration: 6500 },
+      { name: 'projector', label: 'Ch. 05 · The Projector',     duration: 6500 },
+      { name: 'cta',       label: 'Credits · Download',         duration: 5500 },
+    ];
+    const els = scenes.map(s => document.querySelector(`.va-scene[data-scene="${s.name}"]`));
+    const bar     = document.getElementById('va-bar');
+    const counter = document.getElementById('va-counter');
+    const playBtn = document.getElementById('va-play');
+    const dotsEl  = document.getElementById('va-dots');
+    if (!els[0] || !bar || !counter || !playBtn) return;
+
+    // Build chapter dots
+    const dots = scenes.map((s, idx) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.title = s.label;
+      b.setAttribute('aria-label', `Go to ${s.label}`);
+      b.addEventListener('click', () => { i = idx; show(i); });
+      dotsEl && dotsEl.appendChild(b);
+      return b;
+    });
+
+    let i = 0;
+    let elapsed = 0;
+    let lastTick = performance.now();
+    let paused = false;
+
+    const show = (idx) => {
+      els.forEach((el, j) => el.classList.toggle('active', j === idx));
+      dots.forEach((d, j) => d.classList.toggle('active', j === idx));
+      counter.textContent = `${idx + 1} / ${scenes.length} · ${scenes[idx].label}`;
+      elapsed = 0;
+      bar.style.width = '0%';
+    };
+
+    const tick = (now) => {
+      const dt = now - lastTick;
+      lastTick = now;
+      if (!paused) {
+        elapsed += dt;
+        const dur = scenes[i].duration;
+        bar.style.width = Math.min(100, (elapsed / dur) * 100) + '%';
+        if (elapsed >= dur) {
+          i = (i + 1) % scenes.length;
+          show(i);
+        }
+      }
+      requestAnimationFrame(tick);
+    };
+
+    playBtn.addEventListener('click', () => {
+      paused = !paused;
+      playBtn.textContent = paused ? 'Play' : 'Pause';
+    });
+
+    // Pause when the tab is backgrounded so the loop doesn't drift.
+    document.addEventListener('visibilitychange', () => {
+      lastTick = performance.now();
+    });
+
+    show(0);
+    requestAnimationFrame((t) => { lastTick = t; requestAnimationFrame(tick); });
+  })();
+</script>
+</body>
+</html>

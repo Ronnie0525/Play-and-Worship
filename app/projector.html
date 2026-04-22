@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Live Output — Play &amp; Worship</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/projector.css">
+</head>
+<body>
+<div id="stage" class="stage"></div>
+<script>
+(() => {
+  const ch = new BroadcastChannel('worship-projector');
+  const stage = document.getElementById('stage');
+
+  // Cache video blob URLs by slide id so we don't rebuild the <video>
+  // element on unrelated state updates (blackout toggle, handshake).
+  let currentVideoId = null;
+  let currentVideoUrl = null;
+
+  const disposeVideo = () => {
+    if (currentVideoUrl) { try { URL.revokeObjectURL(currentVideoUrl); } catch {} }
+    currentVideoUrl = null;
+    currentVideoId = null;
+  };
+
+  // One-click sound enabler. When the browser blocks unmuted autoplay
+  // the video plays muted; this overlay lets the operator restore audio
+  // with a single click anywhere on the stage.
+  let soundPromptEl = null;
+  const clearSoundPrompt = () => {
+    if (soundPromptEl) { try { soundPromptEl.remove(); } catch {} soundPromptEl = null; }
+  };
+  const showSoundPrompt = (videoEl) => {
+    clearSoundPrompt();
+    const p = document.createElement('div');
+    p.textContent = '🔊  Click anywhere to enable sound';
+    p.style.cssText = [
+      'position:fixed','top:24px','left:50%','transform:translateX(-50%)',
+      'padding:12px 22px','background:rgba(20,24,36,0.88)',
+      'color:#f5ead0','font:600 15px system-ui,sans-serif',
+      'letter-spacing:0.02em','border:1px solid rgba(200,157,74,0.5)',
+      'border-radius:999px','cursor:pointer','z-index:20',
+      'box-shadow:0 10px 30px rgba(0,0,0,0.6)','animation:soundPulse 1.6s ease-in-out infinite'
+    ].join(';');
+    soundPromptEl = p;
+    document.body.appendChild(p);
+    // Show the cursor while the prompt is up (normally hidden on projector)
+    document.body.style.cursor = 'pointer';
+    const enable = () => {
+      try {
+        videoEl.muted = false;
+        const pr = videoEl.play();
+        if (pr && pr.catch) pr.catch(() => {});
+      } catch {}
+      document.body.style.cursor = 'none';
+      clearSoundPrompt();
+      document.removeEventListener('click', enable, true);
+      document.removeEventListener('keydown', enable, true);
+    };
+    document.addEventListener('click', enable, true);
+    document.addEventListener('keydown', enable, true);
+  };
+
+  const FONTS = {
+    system:  "'Segoe UI', system-ui, -apple-system, sans-serif",
+    serif:   "'Source Serif 4', Georgia, 'Times New Roman', serif",
+    display: "'Trebuchet MS', 'Segoe UI', sans-serif",
+    mono:    "ui-monospace, 'Consolas', monospace",
+  };
+
+  const applyStyle = (el, style) => {
+    if (!style) return;
+    if (style.bgImage) {
+      el.style.background = `${style.bgColor || '#000'} url("${style.bgImage}") center/cover no-repeat`;
+      // Expose the bg image as a CSS variable so motion presets can paint
+      // it via an animated pseudo-layer without re-parsing a shorthand.
+      el.style.setProperty('--bg-image', `url("${style.bgImage}")`);
+    } else if (style.bgColor) {
+      el.style.background = style.bgColor;
+      el.style.removeProperty('--bg-image');
+    }
+    if (style.textColor) el.style.color = style.textColor;
+    if (style.align)     el.style.textAlign = style.align;
+    if (style.motion && style.motion !== 'none') el.classList.add(`motion-${style.motion}`);
+  };
+
+  const applyTextStyle = (el, style) => {
+    if (!style) return;
+    const font = FONTS[style.fontFamily] || FONTS.system;
+    el.style.fontFamily = font;
+    const sz = Number(style.fontSize) || 100;
+    // The base font size is controlled by projector.css (5vw); multiply by percent.
+    el.style.fontSize = `${(5 * sz) / 100}vw`;
+    if (style.textColor) el.style.color = style.textColor;
+    if (style.align)     el.style.textAlign = style.align;
+  };
+
+  // Countdown ticker — one setInterval stored at module level so it's
+  // always cleared before a new slide takes over.
+  let cdInterval = null;
+  const stopCountdown = () => { if (cdInterval) { clearInterval(cdInterval); cdInterval = null; } };
+
+  function render(payload) {
+    const { blackout, slide } = payload || {};
+    stage.classList.remove('fade-in');
+
+    // Swap content after a tiny fade
+    stage.classList.add('fade-out');
+    setTimeout(() => {
+      if (!slide || slide.kind !== 'video' || slide.id !== currentVideoId) {
+        disposeVideo();
+      }
+      clearSoundPrompt();
+      stopCountdown();
+      stage.className = 'stage';
+      stage.innerHTML = '';
+
+      if (!slide) { stage.classList.add('empty'); return; }
+
+      if (slide.kind === 'countdown') {
+        stage.classList.add('countdown');
+        stage.innerHTML = `
+          <div class="cd-label">${(slide.label || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</div>
+          <div class="cd-time" id="cd-time">00:00</div>
+        `;
+        const el = stage.querySelector('#cd-time');
+        let lastSec = -1;
+        const tick = () => {
+          const remaining = Math.max(0, slide.endsAt - Date.now());
+          const totalSec = Math.ceil(remaining / 1000);
+          const mm = Math.floor(totalSec / 60);
+          const ss = totalSec % 60;
+          const display = `${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`;
+          if (el.textContent !== display) el.textContent = display;
+
+          const inFinal = remaining > 0 && totalSec <= 10;
+          const inCritical = remaining > 0 && totalSec <= 3;
+          stage.classList.toggle('final', inFinal);
+          stage.classList.toggle('critical', inCritical);
+
+          // Kick off a fresh beat animation when the seconds digit changes,
+          // so the pulse lines up with each visible tick.
+          if (totalSec !== lastSec) {
+            lastSec = totalSec;
+            if (inFinal) {
+              el.classList.remove('beat');
+              // Force reflow so the animation re-starts.
+              void el.offsetWidth;
+              el.classList.add('beat');
+            }
+          }
+
+          if (remaining <= 0) {
+            stopCountdown();
+            stage.classList.remove('final', 'critical');
+            el.classList.remove('beat');
+          }
+        };
+        tick();
+        cdInterval = setInterval(tick, 200);
+        if (blackout) stage.classList.add('blackout');
+        requestAnimationFrame(() => stage.classList.add('fade-in'));
+        return;
+      }
+
+      if (slide.kind === 'image' && slide.dataUrl) {
+        stage.classList.add('image');
+        const img = document.createElement('img');
+        img.src = slide.dataUrl;
+        stage.appendChild(img);
+      } else if (slide.kind === 'video') {
+        stage.classList.add('video');
+        const blob = slide.blob ||
+          (window.opener && window.opener.App && window.opener.App.getVideoBlob
+            ? window.opener.App.getVideoBlob(slide.blobId)
+            : null);
+        if (!blob) {
+          // Fallback: show poster + warning so the user isn't blinded by a black screen
+          if (slide.posterUrl) {
+            stage.classList.add('image');
+            const img = document.createElement('img');
+            img.src = slide.posterUrl;
+            stage.appendChild(img);
+          }
+          const note = document.createElement('div');
+          note.textContent = 'Video source unavailable';
+          note.style.cssText = 'position:absolute;bottom:24px;left:50%;transform:translateX(-50%);color:#fff;font:600 14px system-ui;background:rgba(200,40,40,0.8);padding:6px 12px;border-radius:4px;';
+          stage.appendChild(note);
+        } else {
+          if (!currentVideoUrl || currentVideoId !== slide.id) {
+            currentVideoUrl = URL.createObjectURL(blob);
+            currentVideoId = slide.id;
+          }
+          const v = document.createElement('video');
+          v.src = currentVideoUrl;
+          v.autoplay = true;
+          v.loop = slide.loop !== false;
+          v.muted = !!slide.muted;
+          v.controls = false;
+          v.playsInline = true;
+          v.style.width = '100%';
+          v.style.height = '100%';
+          v.style.objectFit = 'contain';
+          v.style.background = '#000';
+          if (slide.posterUrl) v.poster = slide.posterUrl;
+          stage.appendChild(v);
+          // Try to play unmuted. If the browser blocks unmuted autoplay
+          // (popup windows start without user activation), fall back to
+          // muted playback and show a one-click prompt so the operator
+          // can enable sound with a single click anywhere on the stage.
+          const wantSound = !slide.muted;
+          v.play().catch(() => {
+            v.muted = true;
+            v.play().catch(() => {});
+            if (wantSound) showSoundPrompt(v);
+          });
+        }
+      } else if (slide.kind === 'scripture') {
+        stage.classList.add('scripture');
+        applyStyle(stage, slide.style);
+        const txt = document.createElement('div');
+        txt.className = 'txt';
+        // Scripture text from _buildScripturePayload has verse numbers
+        // wrapped in U+2063 pairs. Split on that marker and wrap the
+        // odd-indexed runs in .vnum spans so they can be colored.
+        const parts = String(slide.text || '').split('⁣');
+        parts.forEach((p, i) => {
+          if (i % 2 === 1) {
+            const span = document.createElement('span');
+            span.className = 'vnum';
+            span.textContent = p;
+            txt.appendChild(span);
+          } else if (p) {
+            txt.appendChild(document.createTextNode(p));
+          }
+        });
+        applyTextStyle(txt, slide.style);
+        const ref = document.createElement('div');
+        ref.className = 'ref';
+        ref.textContent = slide.reference || '';
+        stage.appendChild(txt);
+        stage.appendChild(ref);
+      } else {
+        stage.classList.add('song');
+        applyStyle(stage, slide.style);
+        const txt = document.createElement('div');
+        txt.className = 'txt';
+        txt.textContent = slide.text || '';
+        applyTextStyle(txt, slide.style);
+        stage.appendChild(txt);
+        if (slide.reference) {
+          const ref = document.createElement('div');
+          ref.className = 'ref';
+          ref.textContent = slide.reference;
+          stage.appendChild(ref);
+        }
+      }
+
+      if (blackout) stage.classList.add('blackout');
+      requestAnimationFrame(() => stage.classList.add('fade-in'));
+    }, 120);
+  }
+
+  // Accept render messages from either transport. BroadcastChannel works
+  // when both pages share a real origin; window.postMessage works when the
+  // pages are opened as file:// URLs and BroadcastChannel is inert. We
+  // dedupe by `seq` so a payload arriving via both transports only renders
+  // once (otherwise we'd flicker through the fade-out each time).
+  let lastSeq = -1;
+  const handle = (d) => {
+    if (!d || d.type !== 'render') return;
+    if (typeof d.seq === 'number') {
+      if (d.seq <= lastSeq) return;
+      lastSeq = d.seq;
+    }
+    render(d.payload);
+  };
+  ch.addEventListener('message', (e) => handle(e.data));
+  window.addEventListener('message', (e) => {
+    if (window.opener && e.source !== window.opener) return;
+    handle(e.data);
+  });
+
+  // Fullscreen toggle
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'f' || e.key === 'F' || e.key === 'F11') {
+      e.preventDefault();
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+      else document.exitFullscreen?.();
+    }
+  });
+
+  // Announce ready on both transports so the main app re-sends state.
+  const announce = () => {
+    try { ch.postMessage({ type: 'ready' }); } catch {}
+    try {
+      if (window.opener && !window.opener.closed) {
+        window.opener.postMessage({ type: 'ready' }, '*');
+      }
+    } catch {}
+  };
+  announce();
+  window.addEventListener('focus', announce);
+  window.addEventListener('beforeunload', () => { try { ch.close(); } catch {} });
+})();
+</script>
+</body>
+</html>

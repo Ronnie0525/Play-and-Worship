@@ -1,0 +1,615 @@
+/* Projector output — pure black, centered, fade transitions */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  width: 100%;
+  background: #000;
+  color: #fff;
+  overflow: hidden;
+  cursor: none;
+}
+
+.stage {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 6vh 8vw;
+  opacity: 0;
+  transition: opacity 0.22s ease;
+}
+.stage.fade-in { opacity: 1; }
+.stage.fade-out { opacity: 0; }
+.stage.blackout { opacity: 0 !important; }
+
+.stage.empty { background: #000; }
+
+.stage.scripture .txt {
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-weight: 500;
+  font-size: 5.5vw;
+  line-height: 1.28;
+  max-width: 94vw;
+}
+.stage.song .txt {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-weight: 500;
+  font-size: 5vw;
+  line-height: 1.18;
+  max-width: 94vw;
+  letter-spacing: -0.005em;
+  text-shadow: 0 3px 14px rgba(0,0,0,0.55);
+  white-space: pre-wrap;
+}
+.stage.scripture .txt { white-space: pre-wrap; }
+
+/* Verse numbers inside multi-verse scripture slides — set off with a warm
+   accent color and superscript so the eye can find verse boundaries. */
+.stage.scripture .txt .vnum {
+  color: #e6b652;
+  font-size: 0.55em;
+  font-weight: 700;
+  vertical-align: super;
+  letter-spacing: 0.02em;
+  margin: 0 0.1em 0 0.1em;
+  opacity: 0.95;
+}
+
+.ref {
+  margin-top: 5vh;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 1.5vw;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #d4b57a;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+  position: relative;
+  padding-top: 2.2vh;
+}
+.ref::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 6vw;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(212, 181, 122, 0.55) 50%,
+    transparent 100%);
+}
+
+.stage.image { padding: 0; }
+.stage.image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.stage.video { padding: 0; }
+.stage.video video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  background: #000;
+}
+
+@keyframes soundPulse {
+  0%, 100% { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 0 0 rgba(200, 157, 74, 0.4); }
+  50%      { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 0 8px rgba(200, 157, 74, 0); }
+}
+
+/* -------- Countdown display ----------------------------------- */
+.stage.countdown {
+  background: #000;
+  flex-direction: column;
+  gap: 4vh;
+  padding: 8vh 8vw;
+  transition: background 0.6s ease;
+}
+.stage.countdown .cd-label {
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-weight: 500;
+  font-size: 5.5vw;
+  line-height: 1.18;
+  color: #f3c867;
+  letter-spacing: 0.005em;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+  max-width: 92vw;
+  transition: color 0.5s ease;
+}
+.stage.countdown .cd-time {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 24vw;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  text-shadow:
+    0 8px 40px rgba(0, 0, 0, 0.8),
+    0 0 80px rgba(200, 157, 74, 0.15);
+  animation: cdIdleGlow 3.5s ease-in-out infinite;
+  transition: color 0.4s ease;
+  will-change: transform, filter, text-shadow;
+}
+
+/* Idle: a soft breathing glow — something to catch the eye without
+   feeling urgent. Runs until the final 10-second countdown kicks in. */
+@keyframes cdIdleGlow {
+  0%, 100% {
+    text-shadow:
+      0 8px 40px rgba(0, 0, 0, 0.8),
+      0 0 60px rgba(200, 157, 74, 0.1);
+  }
+  50% {
+    text-shadow:
+      0 8px 40px rgba(0, 0, 0, 0.8),
+      0 0 110px rgba(200, 157, 74, 0.35);
+  }
+}
+
+/* Final 10 seconds: dramatic red-amber palette. The beat animation
+   is restarted on every second change from JS so it lines up with
+   each ticking digit. */
+.stage.countdown.final {
+  background:
+    radial-gradient(ellipse at 50% 50%, rgba(255, 60, 40, 0.12) 0%, transparent 60%),
+    #000;
+}
+.stage.countdown.final .cd-label {
+  color: #ffb06b;
+}
+.stage.countdown.final .cd-time {
+  color: #ffcb7a;
+  text-shadow:
+    0 8px 40px rgba(0, 0, 0, 0.85),
+    0 0 120px rgba(255, 120, 60, 0.55);
+  animation: none;
+}
+.stage.countdown.final .cd-time.beat {
+  animation: cdBeat 1s cubic-bezier(.2, .7, .25, 1);
+}
+@keyframes cdBeat {
+  0%   { transform: scale(1);     filter: brightness(1); }
+  12%  { transform: scale(1.08);  filter: brightness(1.45); }
+  28%  { transform: scale(1.02);  filter: brightness(1.1); }
+  100% { transform: scale(1);     filter: brightness(1); }
+}
+
+/* Final 3 seconds: even more intense — crimson flash. */
+.stage.countdown.final.critical .cd-time {
+  color: #ff6a4a;
+  text-shadow:
+    0 8px 40px rgba(0, 0, 0, 0.85),
+    0 0 140px rgba(255, 80, 40, 0.75);
+}
+.stage.countdown.final.critical {
+  background:
+    radial-gradient(ellipse at 50% 50%, rgba(255, 40, 20, 0.22) 0%, transparent 60%),
+    #000;
+}
+
+/* =============================================================
+   Motion backgrounds for song / scripture slides.
+   Each preset paints onto a pseudo-layer so the text stays
+   crisp on top. The bg image is read from a CSS variable set
+   by applyStyle() (--bg-image).
+   ============================================================= */
+
+.stage[class*="motion-"] > * {
+  position: relative;
+  z-index: 1;
+}
+.stage[class*="motion-"] {
+  overflow: hidden;
+}
+
+/* ---- Ken Burns: slow zoom + drift on the bg image ---- */
+.stage.motion-kenburns { background-image: none !important; }
+.stage.motion-kenburns::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: var(--bg-image, none);
+  background-size: cover;
+  background-position: center;
+  transform-origin: center;
+  animation: kenBurns 32s ease-in-out infinite alternate;
+  will-change: transform;
+  z-index: 0;
+}
+@keyframes kenBurns {
+  0%   { transform: scale(1.00) translate(0%, 0%); }
+  50%  { transform: scale(1.10) translate(-2%, -1%); }
+  100% { transform: scale(1.16) translate(2%, 1%); }
+}
+
+/* ---- Drift: radial light highlights slowly shifting ---- */
+.stage.motion-drift::after {
+  content: '';
+  position: absolute; inset: -15%;
+  background:
+    radial-gradient(ellipse at 25% 35%, rgba(255, 250, 230, 0.18), transparent 55%),
+    radial-gradient(ellipse at 75% 70%, rgba(220, 230, 255, 0.14), transparent 55%);
+  animation: driftMotion 26s ease-in-out infinite alternate;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 0;
+}
+@keyframes driftMotion {
+  0%   { transform: translate(-4%, -3%) rotate(0deg); }
+  100% { transform: translate( 4%,  3%) rotate(6deg); }
+}
+
+/* ---- Bokeh: many blurred floating orbs, two independent layers ---- */
+.stage.motion-bokeh::before,
+.stage.motion-bokeh::after {
+  content: '';
+  position: absolute; inset: -10%;
+  background-repeat: no-repeat;
+  filter: blur(22px);
+  opacity: 0.8;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 0;
+}
+.stage.motion-bokeh::before {
+  background-image:
+    radial-gradient(circle at 18% 28%, rgba(255, 230, 180, 0.65), transparent 22%),
+    radial-gradient(circle at 72% 18%, rgba(255, 210, 150, 0.55), transparent 20%),
+    radial-gradient(circle at 38% 78%, rgba(255, 240, 200, 0.60), transparent 24%),
+    radial-gradient(circle at 88% 62%, rgba(220, 200, 255, 0.50), transparent 20%),
+    radial-gradient(circle at 10% 55%, rgba(255, 200, 160, 0.55), transparent 18%),
+    radial-gradient(circle at 55% 45%, rgba(180, 220, 255, 0.45), transparent 22%);
+  background-size: 55vw 55vh, 50vw 50vh, 60vw 60vh, 45vw 45vh, 40vw 40vh, 50vw 50vh;
+  animation: bokehFloatA 22s ease-in-out infinite alternate;
+}
+.stage.motion-bokeh::after {
+  background-image:
+    radial-gradient(circle at 30% 12%, rgba(255, 220, 170, 0.55), transparent 22%),
+    radial-gradient(circle at 80% 40%, rgba(255, 200, 230, 0.50), transparent 20%),
+    radial-gradient(circle at 60% 88%, rgba(220, 255, 220, 0.45), transparent 24%),
+    radial-gradient(circle at 15% 82%, rgba(255, 245, 190, 0.55), transparent 20%),
+    radial-gradient(circle at 92% 15%, rgba(200, 220, 255, 0.50), transparent 18%);
+  background-size: 50vw 50vh, 45vw 45vh, 55vw 55vh, 40vw 40vh, 48vw 48vh;
+  animation: bokehFloatB 28s ease-in-out infinite alternate;
+}
+@keyframes bokehFloatA {
+  0%   { background-position:  0%   0%,  100% 10%,   0% 100%, 100% 100%,   0% 50%,  50% 50%; }
+  50%  { background-position:  35% 20%,   70% 45%,  45% 75%,   60% 60%,  40% 30%,  30% 70%; }
+  100% { background-position:  100% 100%,  0% 100%, 100%   0%,  0%  0%, 100%   0%,  80% 30%; }
+}
+@keyframes bokehFloatB {
+  0%   { background-position:  20%   0%,  100% 50%,  60% 100%,   0% 100%, 100%   0%; }
+  50%  { background-position:  60%  40%,   40% 20%,  30%  60%,  70%  50%,  40%  70%; }
+  100% { background-position: 100% 100%,   0%  0%, 100%   0%, 100% 100%,   0% 100%; }
+}
+
+/* ---- Rays: slow rotating god-rays behind a soft mask ---- */
+.stage.motion-rays::after {
+  content: '';
+  position: absolute;
+  top: -40%; left: -40%;
+  width: 180%; height: 180%;
+  background: conic-gradient(from 0deg,
+    rgba(255, 245, 220, 0.10) 0deg,
+    transparent 20deg,
+    rgba(255, 235, 200, 0.08) 45deg,
+    transparent 75deg,
+    rgba(255, 245, 220, 0.09) 110deg,
+    transparent 150deg,
+    rgba(255, 230, 190, 0.07) 190deg,
+    transparent 230deg,
+    rgba(255, 245, 220, 0.09) 275deg,
+    transparent 320deg,
+    rgba(255, 245, 220, 0.10) 360deg);
+  transform-origin: center;
+  animation: raysSpin 140s linear infinite;
+  filter: blur(18px);
+  mix-blend-mode: screen;
+  -webkit-mask-image: radial-gradient(circle at center, #000 0%, rgba(0,0,0,0.6) 40%, transparent 80%);
+  mask-image: radial-gradient(circle at center, #000 0%, rgba(0,0,0,0.6) 40%, transparent 80%);
+  pointer-events: none;
+  z-index: 0;
+}
+@keyframes raysSpin { to { transform: rotate(360deg); } }
+
+/* ---- Glow: breathing warm spotlight ---- */
+.stage.motion-glow::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at 50% 55%,
+    rgba(255, 240, 215, 0.18) 0%,
+    rgba(255, 220, 170, 0.10) 28%,
+    transparent 70%);
+  animation: glowPulse 8s ease-in-out infinite;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 0;
+}
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.8; transform: scale(1.00); }
+  50%      { opacity: 1.0; transform: scale(1.10); }
+}
+
+/* ---- Aurora: flowing color curtains ---- */
+.stage.motion-aurora::after {
+  content: '';
+  position: absolute; inset: -10%;
+  background:
+    linear-gradient(100deg,
+      transparent 18%,
+      rgba(46, 115, 109, 0.38) 38%,
+      rgba(200, 157, 74, 0.28) 55%,
+      rgba(145, 100, 180, 0.25) 70%,
+      transparent 90%),
+    linear-gradient(80deg,
+      transparent 15%,
+      rgba(60, 140, 180, 0.24) 42%,
+      rgba(255, 200, 160, 0.18) 68%,
+      transparent 95%);
+  background-size: 220% 220%, 180% 180%;
+  mix-blend-mode: screen;
+  filter: blur(28px);
+  animation: auroraFlow 30s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 0;
+}
+@keyframes auroraFlow {
+  0%   { background-position: 0% 0%, 100% 100%; }
+  100% { background-position: 100% 50%, 0% 40%; }
+}
+
+/* ---- Starfield: two layers of blinking stars (crisp on/off blink) ---- */
+.stage.motion-starfield::before,
+.stage.motion-starfield::after {
+  content: '';
+  position: absolute; inset: 0;
+  background-repeat: no-repeat;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 0;
+}
+.stage.motion-starfield::before {
+  background-image:
+    radial-gradient(4px 4px at 12% 18%, #fff, transparent 70%),
+    radial-gradient(3px 3px at 78% 32%, #fff, transparent 70%),
+    radial-gradient(5px 5px at 88% 78%, #fff, transparent 70%),
+    radial-gradient(4px 4px at 28% 72%, #fff, transparent 70%),
+    radial-gradient(3px 3px at 52% 8%,  #fff, transparent 70%),
+    radial-gradient(4px 4px at 45% 90%, #fff, transparent 70%),
+    radial-gradient(3px 3px at 65% 52%, #fff, transparent 70%),
+    radial-gradient(5px 5px at 20% 50%, #fff, transparent 70%);
+  animation: starfieldBlinkA 1.8s steps(1, end) infinite;
+  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.6));
+}
+.stage.motion-starfield::after {
+  background-image:
+    radial-gradient(3px 3px at 38% 58%, #fff, transparent 70%),
+    radial-gradient(5px 5px at 8%  48%, #fff, transparent 70%),
+    radial-gradient(3px 3px at 62% 42%, #fff, transparent 70%),
+    radial-gradient(4px 4px at 82% 12%, #fff, transparent 70%),
+    radial-gradient(3px 3px at 18% 36%, #fff, transparent 70%),
+    radial-gradient(5px 5px at 68% 82%, #fff, transparent 70%),
+    radial-gradient(4px 4px at 92% 55%, #fff, transparent 70%),
+    radial-gradient(3px 3px at 35% 30%, #fff, transparent 70%);
+  animation: starfieldBlinkB 2.4s steps(1, end) infinite -0.6s;
+  filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.6));
+}
+/* steps(1, end) makes the opacity snap between values — crisp blink,
+   not a smooth fade. The two layers run at different tempos so stars
+   blink independently rather than all flashing in unison. */
+@keyframes starfieldBlinkA {
+  0%, 49%   { opacity: 1.0; }
+  50%, 100% { opacity: 0.0; }
+}
+@keyframes starfieldBlinkB {
+  0%, 59%   { opacity: 1.0; }
+  60%, 100% { opacity: 0.15; }
+}
+
+/* ---- Embers: warm sparks rising slowly, mixed sizes ----
+   Split across ::before (big glowing embers) and ::after (small sparks)
+   so the mix of sizes looks organic — big coals with small flying sparks. */
+.stage.motion-embers::before,
+.stage.motion-embers::after {
+  content: '';
+  position: absolute; inset: 0;
+  background-repeat: repeat;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 0;
+}
+.stage.motion-embers::before {
+  /* Large, soft-edged glowing embers with warm halos. */
+  background-image:
+    radial-gradient(12px 12px at 20% 70%, rgba(255, 140, 60, 0.95),  transparent 65%),
+    radial-gradient(16px 16px at 65% 40%, rgba(255, 110, 40, 0.85),  transparent 65%),
+    radial-gradient(10px 10px at 82% 80%, rgba(255, 180, 90, 0.90),  transparent 65%),
+    radial-gradient(14px 14px at 40% 30%, rgba(255, 155, 70, 0.92),  transparent 65%),
+    radial-gradient(9px 9px   at 10% 50%, rgba(255, 200, 110, 0.85), transparent 65%);
+  background-size: 220px 400px, 260px 480px, 190px 360px, 200px 380px, 170px 320px;
+  filter: blur(3px);
+  animation: embersRiseBig 22s linear infinite;
+}
+.stage.motion-embers::after {
+  /* Smaller bright sparks shooting up faster. */
+  background-image:
+    radial-gradient(3px 3px at 15% 60%, rgba(255, 220, 150, 1),    transparent 70%),
+    radial-gradient(2px 2px at 50% 80%, rgba(255, 200, 130, 0.95), transparent 70%),
+    radial-gradient(4px 4px at 75% 50%, rgba(255, 180, 100, 0.9),  transparent 70%),
+    radial-gradient(2px 2px at 35% 25%, rgba(255, 230, 170, 0.95), transparent 70%),
+    radial-gradient(5px 5px at 90% 15%, rgba(255, 160, 80, 0.85),  transparent 70%),
+    radial-gradient(3px 3px at 5%  35%, rgba(255, 210, 140, 0.95), transparent 70%);
+  background-size: 140px 300px, 100px 240px, 170px 340px, 110px 260px, 150px 320px, 90px 220px;
+  filter: blur(0.5px);
+  animation: embersRiseSmall 12s linear infinite;
+}
+@keyframes embersRiseBig {
+  from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0; }
+  to   { background-position: 30px -400px, -40px -480px, 50px -360px, -30px -380px, 20px -320px; }
+}
+@keyframes embersRiseSmall {
+  from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+  to   { background-position: 15px -300px, -25px -240px, 35px -340px, -20px -260px, 25px -320px, -10px -220px; }
+}
+
+/* ---- Mist: soft veil drifting sideways ---- */
+.stage.motion-mist::after {
+  content: '';
+  position: absolute; inset: -20%;
+  background:
+    radial-gradient(ellipse at 22% 40%, rgba(255, 255, 255, 0.18), transparent 45%),
+    radial-gradient(ellipse at 72% 62%, rgba(255, 255, 255, 0.14), transparent 50%),
+    radial-gradient(ellipse at 50% 85%, rgba(255, 245, 225, 0.12), transparent 55%);
+  animation: mistDrift 46s ease-in-out infinite alternate;
+  filter: blur(22px);
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 0;
+}
+@keyframes mistDrift {
+  0%   { transform: translate(-9%,  2%) scale(1.0); }
+  100% { transform: translate( 9%, -2%) scale(1.1); }
+}
+
+/* ---- Waves: horizontal undulating bands (horizon / water) ---- */
+.stage.motion-waves::after {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(180deg,
+      transparent 0%,
+      rgba(46, 115, 109, 0.22) 45%,
+      rgba(46, 115, 109, 0.32) 50%,
+      rgba(46, 115, 109, 0.22) 55%,
+      transparent 100%),
+    linear-gradient(180deg,
+      transparent 0%,
+      rgba(200, 157, 74, 0.18) 66%,
+      rgba(200, 157, 74, 0.28) 72%,
+      rgba(200, 157, 74, 0.18) 78%,
+      transparent 100%);
+  background-size: 100% 300%, 100% 300%;
+  animation: wavesMove 26s ease-in-out infinite alternate;
+  mix-blend-mode: screen;
+  filter: blur(8px);
+  pointer-events: none;
+  z-index: 0;
+}
+@keyframes wavesMove {
+  0%   { background-position: 0 -20%, 0  25%; }
+  100% { background-position: 0  30%, 0 -25%; }
+}
+
+/* ---- Random Particles: multi-colored dots wandering independently ----
+   Split across ::before (4 colors) and ::after (3 colors). Each pseudo
+   has its own duration + waypoint path so layers don't move in lockstep. */
+.stage.motion-particles::before,
+.stage.motion-particles::after {
+  content: '';
+  position: absolute; inset: 0;
+  background-repeat: repeat;
+  mix-blend-mode: screen;
+  filter: blur(1.5px);
+  pointer-events: none;
+  z-index: 0;
+}
+.stage.motion-particles::before {
+  background-image:
+    radial-gradient(10px 10px at 20% 35%, rgba(255, 100, 150, 0.95), transparent 65%),  /* pink   */
+    radial-gradient(8px 8px   at 60% 70%, rgba(100, 200, 255, 0.90), transparent 65%),  /* cyan   */
+    radial-gradient(13px 13px at 85% 25%, rgba(255, 220, 100, 0.88), transparent 65%),  /* yellow */
+    radial-gradient(9px 9px   at 35% 80%, rgba(150, 255, 170, 0.90), transparent 65%);  /* green  */
+  background-size: 240px 320px, 200px 280px, 280px 360px, 220px 300px;
+  animation: particlesWanderA 22s linear infinite;
+}
+.stage.motion-particles::after {
+  background-image:
+    radial-gradient(12px 12px at 75% 55%, rgba(200, 150, 255, 0.88), transparent 65%),  /* purple */
+    radial-gradient(8px 8px   at 10% 60%, rgba(255, 170, 100, 0.92), transparent 65%),  /* orange */
+    radial-gradient(11px 11px at 50% 15%, rgba(120, 220, 200, 0.90), transparent 65%);  /* mint   */
+  background-size: 260px 340px, 190px 260px, 230px 310px;
+  animation: particlesWanderB 31s linear infinite;
+}
+@keyframes particlesWanderA {
+  0%   { background-position:   0     0,    0    0,    0    0,    0    0; }
+  25%  { background-position:  80px  120px, -120px -60px,  160px  40px, -100px 130px; }
+  50%  { background-position: -100px 220px,  180px 160px,  -80px -180px,  140px -100px; }
+  75%  { background-position:  160px -80px,   60px 240px, -200px 120px, -180px  60px; }
+  100% { background-position:   0    0,    0    0,    0    0,    0    0; }
+}
+@keyframes particlesWanderB {
+  0%   { background-position:   0    0,    0    0,    0    0; }
+  33%  { background-position: -140px 180px,  160px -120px,  -90px -200px; }
+  66%  { background-position:  120px -240px, -140px  130px,  200px   70px; }
+  100% { background-position:   0    0,    0    0,    0    0; }
+}
+
+/* ---- Fire Flux: flickering flame base + rising embers ---- */
+.stage.motion-fireflux::before,
+.stage.motion-fireflux::after {
+  content: '';
+  position: absolute; inset: 0;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 0;
+}
+.stage.motion-fireflux::before {
+  background:
+    radial-gradient(ellipse at 30% 110%, rgba(255, 80, 30, 0.75), transparent 42%),
+    radial-gradient(ellipse at 60% 110%, rgba(255, 150, 50, 0.88), transparent 48%),
+    radial-gradient(ellipse at 85% 110%, rgba(255, 210, 90, 0.72), transparent 40%);
+  background-size: 130% 140%, 150% 160%, 110% 130%;
+  background-repeat: no-repeat;
+  filter: blur(16px);
+  transform-origin: center bottom;
+  animation: fireFluxBase 2.2s ease-in-out infinite;
+}
+@keyframes fireFluxBase {
+  0%, 100% { transform: translateY(0)    scaleY(1);    opacity: 0.78; }
+  25%      { transform: translateY(-2%)  scaleY(1.08); opacity: 1.0;  }
+  50%      { transform: translateY(-1%)  scaleY(0.95); opacity: 0.85; }
+  75%      { transform: translateY(-3%)  scaleY(1.12); opacity: 1.0;  }
+}
+.stage.motion-fireflux::after {
+  background-image:
+    radial-gradient(1.5px 1.5px at 25% 75%, rgba(255, 220, 140, 1), transparent),
+    radial-gradient(2px 2px     at 55% 60%, rgba(255, 180, 90, 0.95), transparent),
+    radial-gradient(1px 1px     at 80% 70%, rgba(255, 200, 110, 0.9), transparent),
+    radial-gradient(1.5px 1.5px at 40% 80%, rgba(255, 160, 80, 0.95), transparent);
+  background-size: 110px 220px, 140px 260px, 90px 200px, 120px 240px;
+  background-repeat: repeat;
+  animation: fireSparks 6s linear infinite;
+}
+@keyframes fireSparks {
+  from { background-position: 0 0, 0 0, 0 0, 0 0; }
+  to   { background-position: 15px -220px, -20px -260px, 25px -200px, -10px -240px; }
+}
+
+/* ---- Breathe: gentle brightness + saturation pulse on base ---- */
+.stage.motion-breathe {
+  animation: breathePulse 9s ease-in-out infinite;
+}
+@keyframes breathePulse {
+  0%, 100% { filter: brightness(0.82) saturate(0.9); }
+  50%      { filter: brightness(1.18) saturate(1.15); }
+}
+
+/* Respect user preference — fall back to static rendering */
+@media (prefers-reduced-motion: reduce) {
+  .stage[class*="motion-"]::before,
+  .stage[class*="motion-"]::after,
+  .stage.motion-breathe {
+    animation: none !important;
+  }
+}
