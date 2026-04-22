@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <title>Play &amp; Worship mark (myrtle green)</title>
+  <desc>Play triangle with cross cutout — solid myrtle green, transparent background. For light surfaces.</desc>
+  <path
+    d="M 36 24 L 36 96 L 102 60 Z M 52 39 H 62 V 49 H 71 V 59 H 62 V 81 H 52 V 59 H 43 V 49 H 52 Z"
+    fill-rule="evenodd"
+    fill="#2E736D"
+    stroke="#2E736D"
+    stroke-width="2"
+    stroke-linejoin="round"/>
+</svg>

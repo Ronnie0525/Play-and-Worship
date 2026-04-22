@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1366,initial-scale=1">
+<title>Play &amp; Worship</title>
+<link rel="icon" type="image/svg+xml" href="../assets/logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<!-- ===================== LOGIN GATE ===================== -->
+<div class="login-gate" id="login-gate" role="dialog" aria-label="Sign in to Play &amp; Worship">
+  <form class="login-card" id="login-form" autocomplete="on">
+    <div class="login-brand">
+      <div class="login-mark"></div>
+      <h1>Play &amp; Worship</h1>
+      <p>Sign in to continue</p>
+    </div>
+
+    <div class="login-field">
+      <label for="login-user">Username</label>
+      <input id="login-user" name="username" type="text" autocomplete="username" spellcheck="false" autocapitalize="off" required>
+    </div>
+
+    <div class="login-field">
+      <label for="login-pass">Password</label>
+      <input id="login-pass" name="password" type="password" autocomplete="current-password" required>
+    </div>
+
+    <div class="login-error" id="login-error" aria-live="polite"></div>
+
+    <button class="login-submit" type="submit">
+      <span>Sign in</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </button>
+
+    <p class="login-hint">Operator access · Credentials required</p>
+  </form>
+</div>
+
+<!-- ===================== INITIAL LOADER ===================== -->
+<div class="app-loader" id="app-loader" role="status" aria-label="Loading Play &amp; Worship">
+  <div class="loader-content">
+    <div class="loader-logo-wrap">
+      <div class="loader-ring"></div>
+      <div class="loader-ring inner"></div>
+      <div class="loader-logo"></div>
+    </div>
+    <h2 class="loader-title">Play &amp; Worship</h2>
+    <p class="loader-tagline">Worship presentation, made simple.</p>
+    <div class="loader-bar"><div class="loader-bar-fill"></div></div>
+    <p class="loader-status" id="loader-status">Initializing…</p>
+  </div>
+</div>
+
+<!-- ===================== MENU BAR ===================== -->
+<div class="menubar">
+  <div class="brand">
+    <div class="brand-mark"></div>
+    <span class="brand-name">Play &amp; Worship</span>
+  </div>
+  <nav class="menu" id="menu">
+    <button class="menu-item" data-menu="file">File</button>
+    <button class="menu-item" data-menu="edit">Edit</button>
+    <button class="menu-item" data-menu="schedule">Schedule</button>
+    <button class="menu-item" data-menu="help">Help</button>
+    <button class="menu-item" id="menu-shortcuts">Shortcuts</button>
+  </nav>
+  <div class="flex"></div>
+  <div class="menu-right">
+    <span class="pill pill-mute" id="projector-pill"><span class="dot"></span>PROJECTOR · DISCONNECTED</span>
+    <span class="pill pill-live hidden" id="live-pill"><span class="dot"></span>LIVE</span>
+  </div>
+</div>
+
+<!-- ===================== TOOLBAR ===================== -->
+<div class="toolbar">
+
+  <div class="tbar-group">
+    <button class="tbar-btn" id="tb-new-song"><span class="tb-ico" data-icon="music"></span>New Song</button>
+    <button class="tbar-btn" id="tb-import-song"><span class="tb-ico" data-icon="plus"></span>Import Song</button>
+    <button class="tbar-btn" id="tb-load-media"><span class="tb-ico" data-icon="media"></span>Load Media</button>
+  </div>
+
+  <div class="tbar-group">
+    <button class="tbar-btn tbar-danger" id="tb-go-live"><span class="tb-ico" data-icon="go"></span>Go Live</button>
+  </div>
+
+  <!-- Export / Import live in the File menu; keep only the hidden file
+       input so the menu's "Import…" can trigger a picker. -->
+  <input type="file" id="import-json-input" accept="application/json" hidden>
+
+  <div class="flex"></div>
+
+  <div class="tbar-group">
+    <button class="tbar-btn tbar-motion" id="tb-motion" title="Background motion for lyrics / scripture slides">
+      <span class="tb-motion-swatch motion-none" id="tb-motion-swatch"></span>
+      <span class="tb-motion-label" id="tb-motion-label">Motion: None</span>
+      <span class="tb-motion-chev">▾</span>
+    </button>
+    <button class="tbar-btn" id="tb-countdown" title="Start a countdown timer on the projector">
+      <span class="tb-ico" data-icon="clock"></span>Countdown<span class="tb-motion-chev">▾</span>
+    </button>
+    <button class="tbar-btn" id="tb-announcement" title="Display an editable announcement slide">
+      <span class="tb-ico" data-icon="megaphone"></span>Announcement
+    </button>
+    <button class="tbar-btn" id="tb-birthday" title="Celebrate a birthday with an animated greeting">
+      <span class="tb-ico" data-icon="cake"></span>Birthday
+    </button>
+    <button class="tbar-btn" id="tb-clear"><span class="tb-ico" data-icon="x"></span>Clear</button>
+    <button class="tbar-btn" id="tb-blackout"><span class="tb-ico" data-icon="blackout"></span>Blackout</button>
+    <button class="tbar-btn tbar-primary" id="tb-live-output">
+      <span class="tb-ico" data-icon="tv"></span><span>Live Output</span>
+    </button>
+  </div>
+
+</div>
+
+<!-- ===================== WORKSPACE ===================== -->
+<div class="workspace">
+
+  <!-- Library (left) -->
+  <aside class="library">
+    <div class="lib-tabs" id="lib-tabs">
+      <button class="lib-tab active" data-tab="songs"><span data-icon="music"></span>Songs</button>
+      <button class="lib-tab" data-tab="hymnal"><span data-icon="book"></span>Hymn</button>
+      <button class="lib-tab" data-tab="bible"><span data-icon="book"></span>Scripture</button>
+      <button class="lib-tab" data-tab="media"><span data-icon="media"></span>Media</button>
+    </div>
+    <div class="lib-body" id="lib-body"></div>
+  </aside>
+
+  <!-- Center workspace -->
+  <main class="center" id="center"></main>
+
+  <!-- Monitors (right) -->
+  <aside class="monitors">
+    <div class="monitor-wrap monitor-preview">
+      <div class="monitor-head">
+        <span class="monitor-title mono">PREVIEW</span>
+        <span class="monitor-ref mono" id="preview-ref">—</span>
+      </div>
+      <div class="monitor-frame">
+        <div class="monitor-stage" id="preview-stage"></div>
+      </div>
+    </div>
+
+    <div class="transport">
+      <button class="tp-btn" id="tp-prev" title="Prev (←)"><span data-icon="prev"></span>Prev</button>
+      <button class="tp-btn tp-go" id="tp-go" title="Go (Space)"><span data-icon="go"></span>Go</button>
+      <button class="tp-btn" id="tp-next" title="Next (→)">Next<span data-icon="next"></span></button>
+    </div>
+
+    <div class="monitor-wrap monitor-live">
+      <div class="monitor-head">
+        <span class="monitor-title mono"><span class="live-dot"></span>LIVE OUTPUT · ON AIR</span>
+        <span class="monitor-ref mono" id="live-ref">—</span>
+      </div>
+      <div class="monitor-frame">
+        <div class="monitor-stage" id="live-stage"></div>
+      </div>
+    </div>
+
+    <div class="schedule-bar-wrap">
+      <div class="schedule-label mono">SCHEDULE</div>
+      <div class="schedule-bar" id="schedule-bar">
+        <div class="schedule-empty">No items in schedule</div>
+      </div>
+    </div>
+
+  </aside>
+
+</div>
+
+<!-- ===================== STATUS BAR ===================== -->
+<div class="statusbar">
+  <span class="status-dot"></span>
+  <span id="status-text">Ready</span>
+  <span class="flex"></span>
+  <span class="mono muted" id="status-counts">0 songs · 0 items</span>
+  <span class="statusbar-sep"></span>
+  <span class="statusbar-credit mono">Created by: Ronnie Balonon Jr.</span>
+</div>
+
+<!-- ===================== OVERLAYS ===================== -->
+<div id="modal-root"></div>
+<div id="toast-stack"></div>
+
+<!-- ===================== SCRIPTS ===================== -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="js/store.js"></script>
+<script src="js/mediaStore.js"></script>
+<script src="js/bible.js"></script>
+<script src="js/pptx.js"></script>
+<script src="js/pdf.js"></script>
+<script src="js/video.js"></script>
+<script src="js/projector.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
