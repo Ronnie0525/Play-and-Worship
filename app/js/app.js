@@ -172,7 +172,11 @@
         this.state.versesPerSlide = settings.versesPerSlide;
       }
       if (typeof settings.sessionMotion === 'string') {
-        this.state.sessionMotion = settings.sessionMotion;
+        // If the saved motion was removed in an earlier update (e.g. glow,
+        // drift, mist, kenburns, breathe), fall back to 'none' so the
+        // dropdown label and the stage class agree.
+        const known = this._MOTION_PRESETS.some(p => p[0] === settings.sessionMotion);
+        this.state.sessionMotion = known ? settings.sessionMotion : 'none';
       }
       if (settings.songCategory === 'worship' || settings.songCategory === 'hymnal') {
         this.state.songCategory = settings.songCategory;
@@ -1863,17 +1867,12 @@
 
     _MOTION_PRESETS: [
       ['none',      'None'],
-      ['kenburns',  'Ken Burns'],
-      ['drift',     'Drift'],
       ['bokeh',     'Bokeh'],
       ['rays',      'Rays'],
-      ['glow',      'Glow'],
       ['aurora',    'Aurora'],
       ['starfield', 'Starfield'],
       ['embers',    'Embers'],
-      ['mist',      'Mist'],
       ['waves',     'Waves'],
-      ['breathe',   'Breathe'],
       ['particles', 'Random Particles'],
       ['fireflux',  'Fire Flux'],
     ],
