@@ -2373,7 +2373,6 @@
         <div class="lib-scroll" id="lib-music-list">
           <div class="bible-state">Loading…</div>
         </div>
-        <div class="lib-music-player" id="lib-music-player"></div>
         <div class="lib-actions">
           <button class="btn btn-primary" id="lib-music-upload" data-tip="Upload MP3 or other audio files">${ICONS.upload}<span>Upload Music</span></button>
           <input type="file" id="lib-music-input" accept="audio/*" multiple hidden>
@@ -2415,44 +2414,48 @@
       });
 
       this._renderLibraryMusicList(body);
-      this._renderMusicPlayer(body);
+      this._renderMusicPlayer();
     },
 
-    // Mini player bar rendered at the bottom of the Music panel — appears
-    // only when a track is loaded. Provides pause/resume, stop, and a
-    // volume slider (persisted to settings).
-    _renderMusicPlayer(body) {
-      const host = $('#lib-music-player', body || document);
+    // Floating player bar — rendered once at the app-shell level so it
+    // survives tab switches. Appears whenever a track is loaded, with
+    // prev/next, play/pause, stop, track title, and a persisted volume.
+    _renderMusicPlayer() {
+      const host = document.getElementById('music-float');
       if (!host) return;
       if (!this._musicAudioEl || !this._musicTrackName) {
         host.innerHTML = '';
-        host.classList.remove('active');
+        host.classList.add('hidden');
         return;
       }
       const paused = this._musicAudioEl.paused;
       const vol = Math.round((this.state.musicVolume ?? 0.85) * 100);
       const volIcon = vol === 0 ? '🔇' : (vol < 33 ? '🔈' : (vol < 66 ? '🔉' : '🔊'));
-      host.classList.add('active');
+      host.classList.remove('hidden');
       host.innerHTML = `
-        <div class="music-player-top">
-          <button class="music-player-toggle" data-music-toggle title="${paused ? 'Play' : 'Pause'}">${paused ? ICONS.play : ICONS.pause}</button>
-          <div class="music-player-name" title="${escapeAttr(this._musicTrackName)}">${escapeHtml(this._musicTrackName)}</div>
-          <button class="music-player-stop" data-music-stop title="Stop">${ICONS.x}</button>
+        <div class="music-float-controls">
+          <button class="music-float-btn" data-music-prev title="Previous track">${ICONS.prev}</button>
+          <button class="music-float-toggle" data-music-toggle title="${paused ? 'Play' : 'Pause'}">${paused ? ICONS.play : ICONS.pause}</button>
+          <button class="music-float-btn" data-music-next title="Next track">${ICONS.next}</button>
         </div>
-        <div class="music-player-vol">
-          <span class="music-player-vol-ico" data-vol-ico>${volIcon}</span>
-          <input type="range" class="music-player-vol-range" id="music-player-vol" min="0" max="100" step="1" value="${vol}">
-          <span class="music-player-vol-num" data-vol-num>${vol}</span>
+        <div class="music-float-name" title="${escapeAttr(this._musicTrackName)}">${escapeHtml(this._musicTrackName)}</div>
+        <div class="music-float-vol">
+          <span class="music-float-vol-ico" data-vol-ico>${volIcon}</span>
+          <input type="range" class="music-float-vol-range" id="music-float-vol" min="0" max="100" step="1" value="${vol}">
+          <span class="music-float-vol-num" data-vol-num>${vol}</span>
         </div>
+        <button class="music-float-stop" data-music-stop title="Stop">${ICONS.x}</button>
       `;
 
       host.querySelector('[data-music-toggle]').addEventListener('click', async () => {
         if (!this._musicAudioId) return;
         await this._toggleMusicPlayback(this._musicAudioId, null);
       });
+      host.querySelector('[data-music-prev]').addEventListener('click', () => this._playAdjacentMusic(-1));
+      host.querySelector('[data-music-next]').addEventListener('click', () => this._playAdjacentMusic(+1));
       host.querySelector('[data-music-stop]').addEventListener('click', () => this._stopMusic());
 
-      const range = host.querySelector('#music-player-vol');
+      const range = host.querySelector('#music-float-vol');
       const numEl = host.querySelector('[data-vol-num]');
       const icoEl = host.querySelector('[data-vol-ico]');
       range.addEventListener('input', (e) => {
@@ -2466,6 +2469,22 @@
       range.addEventListener('change', () => {
         Store.setSetting('musicVolume', this.state.musicVolume);
       });
+    },
+
+    // Step forward (dir = +1) or back (dir = -1) through the alphabetically
+    // sorted track list. Wraps at both ends so "Next" on the last track
+    // plays the first one again.
+    async _playAdjacentMusic(dir) {
+      let tracks = [];
+      try { tracks = await MediaStore.getAudio(); } catch (_) {}
+      if (!tracks.length) return;
+      tracks.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base', numeric: true }));
+      const curIdx = tracks.findIndex(t => t.id === this._musicAudioId);
+      const total = tracks.length;
+      const next = curIdx >= 0
+        ? (curIdx + dir + total) % total
+        : (dir >= 0 ? 0 : total - 1);
+      await this._toggleMusicPlayback(tracks[next].id, null);
     },
 
     async _renderLibraryMusicList(body) {
@@ -2588,9 +2607,13 @@
       const url = URL.createObjectURL(track.blob);
       const audio = new Audio(url);
       audio.volume = this.state.musicVolume ?? 0.85;
-      audio.addEventListener('ended', () => {
+      audio.addEventListener('ended', async () => {
         if (btn) btn.innerHTML = ICONS.play;
-        this._stopMusic();
+        // Autoplay: advance to the next track in the sorted library.
+        // Wraps at the end; if the user only has one track, it'll
+        // restart from the beginning. Press Stop to end playback.
+        try { await this._playAdjacentMusic(+1); }
+        catch (_) { this._stopMusic(); }
       });
       this._musicAudioEl = audio;
       this._musicAudioId = id;
