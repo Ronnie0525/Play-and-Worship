@@ -17,7 +17,7 @@
    Bump CACHE_VERSION to invalidate on a breaking change.
    ============================================================ */
 
-const CACHE_VERSION = 'paw-v5';
+const CACHE_VERSION = 'paw-v6';
 const SHELL = [
   './',
   './index.html',

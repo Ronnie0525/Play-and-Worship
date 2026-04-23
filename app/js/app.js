@@ -26,6 +26,9 @@
     book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V6a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>',
     slides: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="1.5"/><path d="M8 21h8M12 18v3"/></svg>',
     media: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="1.5"/><circle cx="8.5" cy="10.5" r="1.5"/><path d="m21 16-5-5-9 8"/></svg>',
+    headphones: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1v-7h1a2 2 0 0 1 2 2zM3 19a2 2 0 0 0 2 2h1v-7H5a2 2 0 0 0-2 2z"/></svg>',
+    play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+    pause: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>',
     plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
     upload: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M5 21h14"/></svg>',
     search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
@@ -148,6 +151,7 @@
       versesPerSlide: 2,            // pagination size when sending many verses live
       songSearch: '',
       songLanguage: 'en',           // 'en' | 'tl' — filter applied to Songs library tab
+      songCategory: 'worship',      // 'worship' | 'hymnal' — category filter on Songs tab
       projectorConnected: false,
       sessionMotion: 'none',        // operator-level bg motion for text slides (songs/scripture)
       liveDeck: null,               // out-of-band paged deck (e.g. multi-slide birthday) { kind, label, slides[], idx }
@@ -165,6 +169,9 @@
       }
       if (typeof settings.sessionMotion === 'string') {
         this.state.sessionMotion = settings.sessionMotion;
+      }
+      if (settings.songCategory === 'worship' || settings.songCategory === 'hymnal') {
+        this.state.songCategory = settings.songCategory;
       }
       if (settings.songLanguage === 'en' || settings.songLanguage === 'tl') {
         this.state.songLanguage = settings.songLanguage;
@@ -1904,7 +1911,14 @@
             if (plain) { e.preventDefault(); this._setLibraryTab('songs'); }
             break;
           case 'h': case 'H':
-            if (plain) { e.preventDefault(); this._setLibraryTab('hymnal'); }
+            // H now jumps to Songs + Hymns category (Hymn is no longer a
+            // top-level library tab; it lives inside the Songs panel).
+            if (plain) {
+              e.preventDefault();
+              this.state.songCategory = 'hymnal';
+              Store.setSetting('songCategory', 'hymnal');
+              this._setLibraryTab('songs');
+            }
             break;
           case 'b': case 'B':
             if (plain) { e.preventDefault(); this._setLibraryTab('bible'); }
@@ -2163,8 +2177,8 @@
       const sameTab = this._lastLibraryTab === this.state.libraryTab;
       this._lastLibraryTab = this.state.libraryTab;
       body.innerHTML = '';
-      if (this.state.libraryTab === 'songs')  this._renderLibrarySongs(body, 'worship');
-      else if (this.state.libraryTab === 'hymnal') this._renderLibrarySongs(body, 'hymnal');
+      if (this.state.libraryTab === 'songs')       this._renderLibrarySongs(body);
+      else if (this.state.libraryTab === 'music')  this._renderLibraryMusic(body);
       else if (this.state.libraryTab === 'bible')  this._renderLibraryBible(body);
       else if (this.state.libraryTab === 'media')  this._renderLibraryMedia(body);
       if (sameTab && prevTop) {
@@ -2175,13 +2189,18 @@
 
     // -------- Songs tab --------
 
-    _renderLibrarySongs(body, category = 'worship') {
+    _renderLibrarySongs(body) {
+      const category = this.state.songCategory || 'worship';
       const placeholder = category === 'hymnal' ? 'Search hymns…' : 'Search songs…';
       const curLang = this.state.songLanguage || 'en';
       body.innerHTML = `
         <div class="lib-lang-toggle">
           <button class="lib-lang-btn${curLang === 'en' ? ' active' : ''}" data-lang="en">English</button>
           <button class="lib-lang-btn${curLang === 'tl' ? ' active' : ''}" data-lang="tl">Tagalog</button>
+        </div>
+        <div class="lib-cat-toggle">
+          <button class="lib-cat-btn${category === 'worship' ? ' active' : ''}" data-cat="worship" data-tip="Praise and Worship songs">Worship</button>
+          <button class="lib-cat-btn${category === 'hymnal' ? ' active' : ''}" data-cat="hymnal" data-tip="Hymnal">Hymns</button>
         </div>
         <div class="lib-search">
           <div class="search-box">
@@ -2196,22 +2215,30 @@
         </div>
       `;
 
-      this._renderSongList(body, category);
+      this._renderSongList(body);
 
       $$('.lib-lang-btn', body).forEach(btn => {
         btn.addEventListener('click', () => {
           this.state.songLanguage = btn.dataset.lang;
           Store.setSetting('songLanguage', this.state.songLanguage);
           $$('.lib-lang-btn', body).forEach(x => x.classList.toggle('active', x === btn));
-          this._renderSongList(body, category);
+          this._renderSongList(body);
+        });
+      });
+      $$('.lib-cat-btn', body).forEach(btn => {
+        btn.addEventListener('click', () => {
+          this.state.songCategory = btn.dataset.cat;
+          Store.setSetting('songCategory', this.state.songCategory);
+          // Full re-render so the search placeholder + newSong default update too.
+          this._renderLibrarySongs(body);
         });
       });
       $('#lib-song-search', body).addEventListener('input', (e) => {
         this.state.songSearch = e.target.value;
         // Re-render only the list so the search input keeps focus + caret.
-        this._renderSongList(body, category);
+        this._renderSongList(body);
       });
-      $('#lib-song-new', body).addEventListener('click', () => this.newSong(category));
+      $('#lib-song-new', body).addEventListener('click', () => this.newSong());
       $('#lib-song-add', body).addEventListener('click', () => {
         const id = this.state.activeSongId || this.state.editingSong;
         if (!id) return toast('Select a song first.', 'error');
@@ -2219,9 +2246,10 @@
       });
     },
 
-    _renderSongList(body, category = 'worship') {
+    _renderSongList(body) {
       const list = $('#lib-song-list', body);
       if (!list) return;
+      const category = this.state.songCategory || 'worship';
       const q = this.state.songSearch.toLowerCase().trim();
       const lang = this.state.songLanguage || 'en';
       let songs = Store.getSongs();
@@ -2291,6 +2319,175 @@
           });
         });
       });
+    },
+
+    // -------- Music tab --------
+    // MP3 / audio library backed by MediaStore (IndexedDB). Operators can
+    // upload audio files, preview them inline, and remove them. Only one
+    // track plays at a time.
+
+    _renderLibraryMusic(body) {
+      body.innerHTML = `
+        <div class="lib-actions lib-music-upload">
+          <button class="btn btn-primary" id="lib-music-upload" data-tip="Upload MP3 or other audio files">${ICONS.upload}<span>Upload Music</span></button>
+          <input type="file" id="lib-music-input" accept="audio/*" multiple hidden>
+        </div>
+        <div class="lib-search">
+          <div class="search-box">
+            <span data-icon="search"></span>
+            <input id="lib-music-search" type="search" placeholder="Search music…" value="${escapeAttr(this.state.musicSearch || '')}">
+          </div>
+        </div>
+        <div class="lib-scroll" id="lib-music-list">
+          <div class="bible-state">Loading…</div>
+        </div>
+      `;
+
+      const input  = $('#lib-music-input', body);
+      const upBtn  = $('#lib-music-upload', body);
+      const search = $('#lib-music-search', body);
+
+      upBtn.addEventListener('click', () => input.click());
+      input.addEventListener('change', async (e) => {
+        const files = [...(e.target.files || [])];
+        if (!files.length) return;
+        let added = 0, skipped = 0;
+        for (const f of files) {
+          if (!f.type || !f.type.startsWith('audio/')) { skipped++; continue; }
+          try {
+            await MediaStore.putAudio({
+              id: `aud_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+              name: f.name.replace(/\.[^.]+$/, ''),
+              type: f.type,
+              size: f.size,
+              blob: f,
+              createdAt: Date.now(),
+            });
+            added++;
+          } catch (err) { console.warn('music upload', err); }
+        }
+        input.value = '';
+        if (added)   toast(`Added ${added} track${added === 1 ? '' : 's'}`, 'ok');
+        if (skipped) toast(`Skipped ${skipped} non-audio file${skipped === 1 ? '' : 's'}`, 'error');
+        this._renderLibraryMusicList(body);
+      });
+
+      search.addEventListener('input', (e) => {
+        this.state.musicSearch = e.target.value;
+        this._renderLibraryMusicList(body);
+      });
+
+      this._renderLibraryMusicList(body);
+    },
+
+    async _renderLibraryMusicList(body) {
+      const list = $('#lib-music-list', body);
+      if (!list) return;
+      let tracks = [];
+      try { tracks = await MediaStore.getAudio(); } catch (_) {}
+      const q = (this.state.musicSearch || '').toLowerCase().trim();
+      if (q) tracks = tracks.filter(t => (t.name || '').toLowerCase().includes(q));
+      tracks.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base', numeric: true }));
+
+      if (tracks.length === 0) {
+        list.innerHTML = `<div class="bible-state">${q ? 'No matches.' : 'No music yet.'}<div class="mono">${q ? '' : 'UPLOAD AN MP3 TO GET STARTED'}</div></div>`;
+        return;
+      }
+
+      list.innerHTML = tracks.map(t => `
+        <div class="lib-row lib-music-row" data-music-id="${escapeAttr(t.id)}">
+          <button class="lib-music-play" data-music-play="${escapeAttr(t.id)}" title="Play">${ICONS.play}</button>
+          <div class="lib-row-body">
+            <div class="lib-row-title">${escapeHtml(t.name || 'Untitled')}</div>
+            <div class="lib-row-sub">${this._formatBytes(t.size)}</div>
+          </div>
+          <button class="lib-row-del" data-del-music="${escapeAttr(t.id)}" title="Delete">${ICONS.trash}</button>
+        </div>
+      `).join('');
+
+      // Re-hydrate inline SVGs in the rendered buttons (ICONS are inlined but
+      // `data-icon="..."` placeholders elsewhere need hydration).
+      hydrateIcons(list);
+
+      $$('[data-music-play]', list).forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const id = btn.dataset.musicPlay;
+          await this._toggleMusicPlayback(id, btn);
+        });
+      });
+      $$('[data-del-music]', list).forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const id = btn.dataset.delMusic;
+          this._confirm({
+            title: 'Delete track?',
+            message: 'Remove this track from the Music library?',
+            yesLabel: 'Yes, delete',
+            noLabel: 'No',
+          }, async () => {
+            if (this._musicAudioId === id) this._stopMusic();
+            await MediaStore.deleteAudio(id);
+            toast('Track deleted', 'info');
+            this._renderLibraryMusicList(body);
+          });
+        });
+      });
+    },
+
+    async _toggleMusicPlayback(id, btn) {
+      const rowBtns = $$('.lib-music-play');
+      // If this track is already playing — pause it.
+      if (this._musicAudioEl && this._musicAudioId === id && !this._musicAudioEl.paused) {
+        this._musicAudioEl.pause();
+        if (btn) btn.innerHTML = ICONS.play;
+        return;
+      }
+      // If the same track is paused — resume.
+      if (this._musicAudioEl && this._musicAudioId === id && this._musicAudioEl.paused) {
+        try { await this._musicAudioEl.play(); } catch (_) {}
+        if (btn) btn.innerHTML = ICONS.pause;
+        return;
+      }
+      // Otherwise swap to the new track.
+      this._stopMusic();
+      let tracks = [];
+      try { tracks = await MediaStore.getAudio(); } catch (_) {}
+      const track = tracks.find(t => t.id === id);
+      if (!track || !track.blob) return toast('Track missing', 'error');
+
+      const url = URL.createObjectURL(track.blob);
+      const audio = new Audio(url);
+      audio.addEventListener('ended', () => {
+        if (btn) btn.innerHTML = ICONS.play;
+        this._stopMusic();
+      });
+      this._musicAudioEl = audio;
+      this._musicAudioId = id;
+      this._musicAudioUrl = url;
+      try { await audio.play(); } catch (_) {}
+      rowBtns.forEach(b => { b.innerHTML = ICONS.play; });
+      if (btn) btn.innerHTML = ICONS.pause;
+    },
+
+    _stopMusic() {
+      if (this._musicAudioEl) {
+        try { this._musicAudioEl.pause(); } catch (_) {}
+        try { this._musicAudioEl.src = ''; } catch (_) {}
+      }
+      if (this._musicAudioUrl) {
+        try { URL.revokeObjectURL(this._musicAudioUrl); } catch (_) {}
+      }
+      this._musicAudioEl = null;
+      this._musicAudioId = null;
+      this._musicAudioUrl = null;
+    },
+
+    _formatBytes(n) {
+      if (!n && n !== 0) return '';
+      if (n < 1024) return `${n} B`;
+      if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+      return `${(n / 1024 / 1024).toFixed(1)} MB`;
     },
 
     // -------- Bible tab --------
@@ -3818,9 +4015,11 @@
       if (schedIdx >= 0) this._goLiveAt(schedIdx, idx);
     },
 
-    newSong(category = 'worship') {
-      // Inherit the current language filter so clicking "New" while on the
-      // Tagalog tab gives you a Tagalog song — no extra step.
+    newSong(category) {
+      // Default the category to whatever Worship/Hymns toggle is currently
+      // active in the Songs tab, and inherit the language filter too so
+      // clicking New on the Tagalog + Hymns view gives you a Tagalog hymn.
+      if (!category) category = this.state.songCategory || 'worship';
       const language = this.state.songLanguage || 'en';
       const s = Store.newSong({ category, language });
       s._isDraft = true;

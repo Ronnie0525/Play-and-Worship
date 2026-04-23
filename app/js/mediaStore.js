@@ -15,9 +15,10 @@
 const MediaStore = (() => {
 
   const DB_NAME = 'worship-media';
-  const DB_VERSION = 1;
+  const DB_VERSION = 2;
   const STORE_DECKS = 'decks';
   const STORE_VIDEOS = 'videos';
+  const STORE_AUDIO = 'audio';
 
   let dbPromise = null;
 
@@ -35,6 +36,9 @@ const MediaStore = (() => {
         }
         if (!db.objectStoreNames.contains(STORE_VIDEOS)) {
           db.createObjectStore(STORE_VIDEOS, { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains(STORE_AUDIO)) {
+          db.createObjectStore(STORE_AUDIO, { keyPath: 'id' });
         }
       };
       req.onsuccess = () => resolve(req.result);
@@ -78,5 +82,11 @@ const MediaStore = (() => {
     putVideo:    (video)  => put(STORE_VIDEOS, video).catch(e => console.warn('putVideo', e)),
     deleteVideo: (id)     => del(STORE_VIDEOS, id).catch(e => console.warn('deleteVideo', e)),
     clearVideos: ()       => clearAll(STORE_VIDEOS).catch(e => console.warn('clearVideos', e)),
+
+    // Music library — MP3 / M4A / WAV / etc, stored as Blobs.
+    getAudio:    async () => { try { return await getAll(STORE_AUDIO); } catch { return []; } },
+    putAudio:    (audio)  => put(STORE_AUDIO, audio).catch(e => console.warn('putAudio', e)),
+    deleteAudio: (id)     => del(STORE_AUDIO, id).catch(e => console.warn('deleteAudio', e)),
+    clearAudio:  ()       => clearAll(STORE_AUDIO).catch(e => console.warn('clearAudio', e)),
   };
 })();

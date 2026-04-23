@@ -3668,6 +3668,73 @@ body.no-loader .login-gate { display: none; }
     0 4px 12px -4px rgba(46, 115, 109, 0.45);
 }
 
+/* Category toggle (Worship / Hymns) — mirrors language toggle, placed below it. */
+.lib-cat-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 6px 8px 8px;
+  background: var(--panel-2);
+  border-bottom: 1px solid var(--border-2);
+}
+.lib-cat-btn {
+  padding: 7px 10px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--ink-3);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s, box-shadow .15s;
+}
+.lib-cat-btn:hover {
+  background: var(--panel-3);
+  color: var(--ink);
+  border-color: rgba(200, 157, 74, 0.35);
+}
+.lib-cat-btn.active {
+  background: linear-gradient(180deg, rgba(200, 157, 74, 0.28), rgba(200, 157, 74, 0.18));
+  border-color: rgba(200, 157, 74, 0.6);
+  color: var(--amber, #C89D4A);
+  box-shadow:
+    0 0 0 1px rgba(200, 157, 74, 0.25),
+    0 4px 12px -4px rgba(200, 157, 74, 0.35);
+}
+
+/* Music library — upload button + track rows */
+.lib-music-upload {
+  padding: 10px 10px 8px;
+  border-bottom: 1px solid var(--border-2);
+}
+.lib-music-row {
+  display: grid;
+  grid-template-columns: 34px 1fr 28px;
+  align-items: center;
+  gap: 8px;
+}
+.lib-music-play {
+  width: 30px; height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--panel-3);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background .12s, border-color .12s, color .12s, transform .1s;
+}
+.lib-music-play:hover {
+  background: var(--amber, #C89D4A);
+  border-color: var(--amber, #C89D4A);
+  color: #1a1a1a;
+}
+.lib-music-play:active { transform: scale(0.95); }
+.lib-music-play svg { width: 14px; height: 14px; }
+
 /* Song editor language chips — same look as the library toggle */
 .meta-field-wide { grid-column: 1 / -1; }
 .meta-lang-chips {
