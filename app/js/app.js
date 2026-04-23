@@ -5339,20 +5339,19 @@ Second line here
       if (this.state.musicOverride) return;
       if (!this._musicAudioEl || this._musicAudioEl.paused) return;
       if (this._musicStageIsLive()) return;
-      // Never override a live video — the video has its own audio and
-      // the operator hasn't signalled they want music to take over the
-      // stage. The override is intended to cover static slides (songs,
-      // scripture, announcements), not a playing video.
+      // Never override a live video (has its own audio) OR a live
+      // countdown (is a timer that must run to completion). The override
+      // is intended to cover static slides — songs, scripture, etc.
       const cur = this._getLiveSlide();
-      if (cur && cur.kind === 'video') return;
+      if (cur && (cur.kind === 'video' || cur.kind === 'countdown')) return;
       this._musicOverrideTimer = setTimeout(() => {
         this._musicOverrideTimer = null;
         // Sanity — conditions may have changed while the timer was pending.
         if (!this._musicAudioEl || this._musicAudioEl.paused) return;
         if (!this.state.musicSlide) return;
-        // And re-check the video guard at fire time.
+        // And re-check the protected kinds at fire time.
         const now = this._getLiveSlide();
-        if (now && now.kind === 'video') return;
+        if (now && (now.kind === 'video' || now.kind === 'countdown')) return;
         this.state.musicOverride = true;
         this._pushLive();
         this._renderMonitors();
