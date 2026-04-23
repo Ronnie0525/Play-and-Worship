@@ -10,6 +10,8 @@
   "theme_color": "#08090f",
   "lang": "en",
   "categories": ["productivity", "utilities"],
+  "capture_links": "none",
+  "handle_links": "not-preferred",
   "icons": [
     {
       "src": "./assets/icon-192.png",
