@@ -1,0 +1,27 @@
+{
+  "name": "Play & Worship",
+  "short_name": "Play & Worship",
+  "description": "Modern worship presentation — songs, scripture, media, and a dedicated live projector.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#08090f",
+  "theme_color": "#08090f",
+  "lang": "en",
+  "categories": ["productivity", "utilities"],
+  "icons": [
+    {
+      "src": "../assets/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "../assets/logo-mark-gold.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
