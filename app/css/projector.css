@@ -977,14 +977,12 @@ html, body {
     radial-gradient(ellipse at 50% -10%, rgba(46, 115, 109, 0.20), transparent 55%),
     linear-gradient(180deg, #05070e 0%, #0a0f1a 100%);
   color: #f5ead0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  /* Inherit display:flex + align/justify center + position:fixed inset:0
+     from the base .stage — do NOT re-declare position here, or the stage
+     collapses to content height and leaves a black band at the bottom. */
   gap: 2.6vh;
   padding: 6vh 6vw;
   overflow: hidden;
-  position: relative;
 }
 
 .stage.music .music-glow {
