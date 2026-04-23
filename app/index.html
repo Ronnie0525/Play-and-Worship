@@ -54,9 +54,114 @@
     window.__pawInstall = fire;
     window.__pawCanInstall = () => !!deferred;
   })();
+
+  // First-run welcome. Fires once per browser (tracked in localStorage).
+  // Waits for the login gate to be dismissed, then lets the splash play
+  // before fading the welcome card in.
+  (function () {
+    const KEY = 'paw.welcome.v1';
+    const SPLASH_MS = 3800;
+
+    function show() {
+      if (localStorage.getItem(KEY) === 'done') return;
+      const gate = document.getElementById('welcome-gate');
+      if (!gate) return;
+      setTimeout(() => gate.classList.remove('hidden'), SPLASH_MS);
+    }
+
+    function dismiss() {
+      const gate = document.getElementById('welcome-gate');
+      const skip = document.getElementById('welcome-skip-check');
+      try {
+        if (!skip || skip.checked) localStorage.setItem(KEY, 'done');
+      } catch (_) {}
+      if (!gate) return;
+      gate.classList.add('hiding');
+      setTimeout(() => {
+        gate.classList.add('hidden');
+        gate.classList.remove('hiding');
+      }, 300);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const startBtn = document.getElementById('welcome-start');
+      if (startBtn) startBtn.addEventListener('click', dismiss);
+
+      const loginGate = document.getElementById('login-gate');
+      if (!loginGate || !document.body.contains(loginGate)) { show(); return; }
+
+      const obs = new MutationObserver(() => {
+        if (!document.body.contains(loginGate)) {
+          obs.disconnect();
+          show();
+        }
+      });
+      obs.observe(document.body, { childList: true, subtree: true });
+    });
+
+    // Allow triggering from the Help menu later if you want:
+    window.__pawShowWelcome = () => {
+      const gate = document.getElementById('welcome-gate');
+      if (gate) gate.classList.remove('hidden');
+    };
+  })();
 </script>
 </head>
 <body>
+
+<!-- ===================== FIRST-RUN WELCOME ===================== -->
+<div class="welcome-gate hidden" id="welcome-gate" role="dialog" aria-labelledby="welcome-title" aria-modal="true">
+  <div class="welcome-card">
+    <div class="welcome-head">
+      <div class="welcome-mark"></div>
+      <div class="welcome-kicker">First time here</div>
+      <h1 id="welcome-title">Welcome to Play &amp; Worship</h1>
+      <p class="welcome-sub">Your modern worship presentation console — songs, scripture, media, and a live projector window, all in your browser. Here's the quick tour.</p>
+    </div>
+
+    <div class="welcome-tips">
+      <div class="welcome-tip">
+        <div class="welcome-tip-num">1</div>
+        <div class="welcome-tip-body">
+          <h3>Open the projector</h3>
+          <p>Click the green <b>Live Output</b> button in the top-right toolbar. A second window opens — drag it to your projector monitor and press <kbd>F</kbd> for fullscreen.</p>
+        </div>
+      </div>
+      <div class="welcome-tip">
+        <div class="welcome-tip-num">2</div>
+        <div class="welcome-tip-body">
+          <h3>Build your service</h3>
+          <p>Use the <b>Library</b> on the left to pick songs, scripture verses, or media. Double-click an item to add it to your schedule, or press <kbd>Add</kbd>.</p>
+        </div>
+      </div>
+      <div class="welcome-tip">
+        <div class="welcome-tip-num">3</div>
+        <div class="welcome-tip-body">
+          <h3>Preview, then go live</h3>
+          <p>Click a schedule card to preview its slides in the right panel. Press <kbd>Space</kbd> or click <b>Go Live</b> to push the selected slide to the projector.</p>
+        </div>
+      </div>
+      <div class="welcome-tip">
+        <div class="welcome-tip-num">4</div>
+        <div class="welcome-tip-body">
+          <h3>Keyboard shortcuts</h3>
+          <p><kbd>←</kbd>/<kbd>→</kbd> navigate slides · <kbd>B</kbd> blackout · <kbd>Esc</kbd> clear · <kbd>F1</kbd> countdown. Full list under the <b>Shortcuts</b> menu.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="welcome-foot">
+      <label class="welcome-skip">
+        <input type="checkbox" id="welcome-skip-check" checked>
+        <span>Don't show this again</span>
+      </label>
+      <button type="button" class="welcome-cta" id="welcome-start">
+        <span>Get Started</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
 
 <!-- ===================== LOGIN GATE ===================== -->
 <div class="login-gate" id="login-gate" role="dialog" aria-label="Sign in to Play &amp; Worship">
@@ -127,13 +232,13 @@
 <div class="toolbar">
 
   <div class="tbar-group">
-    <button class="tbar-btn" id="tb-new-song"><span class="tb-ico" data-icon="music"></span>New Song</button>
-    <button class="tbar-btn" id="tb-import-song"><span class="tb-ico" data-icon="plus"></span>Import Song</button>
-    <button class="tbar-btn" id="tb-load-media"><span class="tb-ico" data-icon="media"></span>Load Media</button>
+    <button class="tbar-btn" id="tb-new-song" data-tip="Create a new song from scratch — opens a blank lyrics editor."><span class="tb-ico" data-icon="music"></span>New Song</button>
+    <button class="tbar-btn" id="tb-import-song" data-tip="Paste existing lyrics with [Verse 1] / [Chorus] markers and they become sections automatically."><span class="tb-ico" data-icon="plus"></span>Import Song</button>
+    <button class="tbar-btn" id="tb-load-media" data-tip="Load a PPTX, PDF, image, or video file into the media library."><span class="tb-ico" data-icon="media"></span>Load Media</button>
   </div>
 
   <div class="tbar-group">
-    <button class="tbar-btn tbar-danger" id="tb-go-live"><span class="tb-ico" data-icon="go"></span>Go Live</button>
+    <button class="tbar-btn tbar-danger" id="tb-go-live" data-tip="Push the previewed slide to the projector live (Space)."><span class="tb-ico" data-icon="go"></span>Go Live</button>
   </div>
 
   <!-- Export / Import live in the File menu; keep only the hidden file
@@ -143,23 +248,23 @@
   <div class="flex"></div>
 
   <div class="tbar-group">
-    <button class="tbar-btn tbar-motion" id="tb-motion" title="Background motion for lyrics / scripture slides">
+    <button class="tbar-btn tbar-motion" id="tb-motion" data-tip="Animated background for lyrics and scripture slides — particles, waves, gradient, etc.">
       <span class="tb-motion-swatch motion-none" id="tb-motion-swatch"></span>
       <span class="tb-motion-label" id="tb-motion-label">Motion: None</span>
       <span class="tb-motion-chev">▾</span>
     </button>
-    <button class="tbar-btn" id="tb-countdown" title="Start a countdown timer on the projector">
+    <button class="tbar-btn" id="tb-countdown" data-tip="Show a countdown timer on the projector — great for pre-service or break timing.">
       <span class="tb-ico" data-icon="clock"></span>Countdown<span class="tb-motion-chev">▾</span>
     </button>
-    <button class="tbar-btn" id="tb-announcement" title="Display an editable announcement slide">
+    <button class="tbar-btn" id="tb-announcement" data-tip="Create and push announcement slides (multi-slide, editable text, auto-paginates).">
       <span class="tb-ico" data-icon="megaphone"></span>Announcement
     </button>
-    <button class="tbar-btn" id="tb-birthday" title="Celebrate a birthday with an animated greeting">
+    <button class="tbar-btn" id="tb-birthday" data-tip="Celebrate multiple birthdays with an animated greeting slide.">
       <span class="tb-ico" data-icon="cake"></span>Birthday
     </button>
-    <button class="tbar-btn" id="tb-clear"><span class="tb-ico" data-icon="x"></span>Clear</button>
-    <button class="tbar-btn" id="tb-blackout"><span class="tb-ico" data-icon="blackout"></span>Blackout</button>
-    <button class="tbar-btn tbar-primary" id="tb-live-output">
+    <button class="tbar-btn" id="tb-clear" data-tip="Stop projecting anything — clears the live output (Esc)."><span class="tb-ico" data-icon="x"></span>Clear</button>
+    <button class="tbar-btn" id="tb-blackout" data-tip="Fade the projector to black without losing the current slide (B). Press again to restore."><span class="tb-ico" data-icon="blackout"></span>Blackout</button>
+    <button class="tbar-btn tbar-primary" id="tb-live-output" data-tip="Open the projector window. Drag it to your second monitor and press F for fullscreen.">
       <span class="tb-ico" data-icon="tv"></span><span>Live Output</span>
     </button>
   </div>
