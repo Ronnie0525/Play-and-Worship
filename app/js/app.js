@@ -5769,10 +5769,27 @@ Second line here
             stage.classList.remove('final', 'critical');
             timeEl.classList.remove('beat');
             // Swap the monitor into the post-timer message, matching
-            // what the projector window shows.
+            // what the projector window shows — including the
+            // typewriter effect.
             if (slide.finalMessage && !stage.classList.contains('ended')) {
               stage.classList.add('ended');
-              stage.innerHTML = `<div class="cd-ended">${escapeHtml(slide.finalMessage)}</div>`;
+              stage.innerHTML = '<div class="cd-ended"><span class="cd-ended-text"></span><span class="cd-ended-cursor" aria-hidden="true"></span></div>';
+              const textSpan = stage.querySelector('.cd-ended-text');
+              const cursor   = stage.querySelector('.cd-ended-cursor');
+              const msg      = slide.finalMessage;
+              let i = 0;
+              const typeOne = () => {
+                if (!stage.isConnected) return; // tab changed etc.
+                if (i >= msg.length) {
+                  setTimeout(() => cursor && cursor.classList.add('done'), 1400);
+                  return;
+                }
+                const ch = msg[i++];
+                textSpan.textContent += ch;
+                const extra = /[.,!?;:]/.test(ch) ? 160 : 0;
+                setTimeout(typeOne, 70 + Math.random() * 40 + extra);
+              };
+              setTimeout(typeOne, 260);
             }
           }
         };

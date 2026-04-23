@@ -341,9 +341,28 @@
             el.classList.remove('beat');
             // Swap into the post-timer message if one was set.
             if (slide.finalMessage && !stage.classList.contains('ended')) {
-              const msg = slide.finalMessage.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
               stage.classList.add('ended');
-              stage.innerHTML = `<div class="cd-ended">${msg}</div>`;
+              stage.innerHTML = '<div class="cd-ended"><span class="cd-ended-text"></span><span class="cd-ended-cursor" aria-hidden="true"></span></div>';
+              const textSpan = stage.querySelector('.cd-ended-text');
+              const cursor   = stage.querySelector('.cd-ended-cursor');
+              const msg      = slide.finalMessage;
+              // Type out the message. Small random jitter per character
+              // so it feels human, not mechanical. Punctuation gets a
+              // brief pause after for a more natural rhythm.
+              let i = 0;
+              const typeOne = () => {
+                if (i >= msg.length) {
+                  // Linger briefly, then let the cursor fade away so the
+                  // breathing glow has the stage to itself.
+                  setTimeout(() => cursor && cursor.classList.add('done'), 1600);
+                  return;
+                }
+                const ch = msg[i++];
+                textSpan.textContent += ch;
+                const extra = /[.,!?;:]/.test(ch) ? 180 : 0;
+                setTimeout(typeOne, 70 + Math.random() * 40 + extra);
+              };
+              setTimeout(typeOne, 260); // brief beat before typing starts
             }
           }
         };
