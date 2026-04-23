@@ -6083,7 +6083,9 @@ Second line here
         let bars = '';
         for (let i = 0; i < 9; i++) bars += `<span class="mon-music-bar" style="--i:${i}"></span>`;
         stage.innerHTML = `
-          <div class="mon-music-disc"></div>
+          <div class="mon-music-disc">
+            <img class="mon-music-disc-logo" src="../assets/logo-mark-white.svg" alt="" aria-hidden="true">
+          </div>
           <div class="mon-music-text">
             <div class="mon-music-kicker">${slide.paused ? 'Paused' : 'Now Playing'}</div>
             <div class="mon-music-title">${escapeHtml(slide.name || 'Music')}</div>
