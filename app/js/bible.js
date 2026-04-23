@@ -106,12 +106,15 @@ const Bible = (() => {
   };
 
   const TRANSLATIONS = [
-    // Free public-domain (bible-api.com)
-    { code: 'web',  name: 'WEB',  full: 'World English Bible',        source: 'bibleapi' },
-    { code: 'kjv',  name: 'KJV',  full: 'King James Version',          source: 'bibleapi' },
-    { code: 'asv',  name: 'ASV',  full: 'American Standard Version',   source: 'bibleapi' },
-    { code: 'ylt',  name: 'YLT',  full: "Young's Literal Translation", source: 'bibleapi' },
-    { code: 'bbe',  name: 'BBE',  full: 'Bible in Basic English',      source: 'bibleapi' },
+    // Offline — bundled JSON in assets/bible/ (public-domain translations)
+    { code: 'kjv',  name: 'KJV',  full: 'King James Version',          source: 'local' },
+    { code: 'asv',  name: 'ASV',  full: 'American Standard Version',   source: 'local' },
+    { code: 'bbe',  name: 'BBE',  full: 'Bible in Basic English',      source: 'local' },
+    { code: 'ylt',  name: 'YLT',  full: "Young's Literal Translation", source: 'local' },
+    { code: 'ang',  name: 'ANG',  full: 'Ang Biblia (1905)',           source: 'local', language: 'tgl' },
+    // Online fallback — bible-api.com. Kept for WEB since it isn't in the
+    // offline bundle; also a safety net if any local file fails to load.
+    { code: 'web',  name: 'WEB',  full: 'World English Bible',         source: 'bibleapi' },
     // Licensed (API.Bible) — resolved at runtime from your subscription
     { code: 'niv',  name: 'NIV',  full: 'New International Version', source: 'apibible', language: 'eng', abbr: 'NIV' },
     { code: 'nlt',  name: 'NLT',  full: 'New Living Translation',    source: 'apibible', language: 'eng', abbr: 'NLT' },
@@ -136,6 +139,48 @@ const Bible = (() => {
   // Chapter cache (keyed by book|chapter|translation)
   const cache = new Map();
   const cacheKey = (book, chapter, translation) => `${book}|${chapter}|${translation}`;
+
+  // ---------- Local offline bundles (assets/bible/*.json) ----------
+  // A JSON file per translation, shape: { code, name, books: { [bookName]:
+  // { [chapter]: [{v,t}, …] } } }. Loaded once per translation and kept
+  // in memory; the service worker also caches the HTTP response so
+  // subsequent launches work without a network.
+
+  const localCache = new Map();           // translation code -> parsed JSON
+  const localLoad  = new Map();           // translation code -> in-flight Promise
+
+  const loadLocalTranslation = (code) => {
+    if (localCache.has(code)) return Promise.resolve(localCache.get(code));
+    if (localLoad.has(code))  return localLoad.get(code);
+    const p = fetch(`../assets/bible/${code}.json`, { cache: 'force-cache' })
+      .then(res => {
+        if (!res.ok) throw new Error(`Local Bible missing (${code}): HTTP ${res.status}`);
+        return res.json();
+      })
+      .then(data => { localCache.set(code, data); localLoad.delete(code); return data; })
+      .catch(err => { localLoad.delete(code); throw err; });
+    localLoad.set(code, p);
+    return p;
+  };
+
+  const fetchFromLocal = async (book, chapter, meta) => {
+    const data = await loadLocalTranslation(meta.code);
+    const chapters = data.books && data.books[book];
+    if (!chapters) throw new Error(`${meta.name}: book "${book}" not found`);
+    const rows = chapters[String(chapter)];
+    if (!rows) throw new Error(`${meta.name}: ${book} ${chapter} not found`);
+    return {
+      reference: `${book} ${chapter}`,
+      translation: meta.code,
+      translationName: meta.full,
+      verses: rows.map(r => ({
+        book,
+        chapter: Number(chapter),
+        verse: Number(r.v),
+        text: String(r.t || '').replace(/\s+/g, ' ').trim(),
+      })),
+    };
+  };
 
   // ---------- bible-api.com (public-domain translations) ----------
 
@@ -225,9 +270,26 @@ const Bible = (() => {
     const meta = TRANSLATIONS.find(t => t.code === translation);
     if (!meta) throw new Error(`Unknown translation: ${translation}`);
 
-    const result = meta.source === 'apibible'
-      ? await fetchFromApiBible(book, chapter, meta)
-      : await fetchFromBibleApi(book, chapter, translation);
+    let result;
+    if (meta.source === 'local') {
+      try {
+        result = await fetchFromLocal(book, chapter, meta);
+      } catch (e) {
+        // If the local bundle is missing for any reason, fall back to the
+        // public API so users on a first-time visit with flaky connectivity
+        // still get their chapter. Only works for codes bible-api.com
+        // actually knows — KJV/ASV/BBE/YLT do; Tagalog ANG does not.
+        if (['kjv', 'asv', 'bbe', 'ylt'].includes(translation)) {
+          result = await fetchFromBibleApi(book, chapter, translation);
+        } else {
+          throw e;
+        }
+      }
+    } else if (meta.source === 'apibible') {
+      result = await fetchFromApiBible(book, chapter, meta);
+    } else {
+      result = await fetchFromBibleApi(book, chapter, translation);
+    }
 
     cache.set(key, result);
     return result;

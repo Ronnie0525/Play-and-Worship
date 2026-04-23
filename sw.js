@@ -17,7 +17,7 @@
    Bump CACHE_VERSION to invalidate on a breaking change.
    ============================================================ */
 
-const CACHE_VERSION = 'paw-v29';
+const CACHE_VERSION = 'paw-v30';
 const SHELL = [
   './',
   './index.html',
@@ -44,6 +44,13 @@ const SHELL = [
   './assets/icon-512.png',
   './assets/icon-mask-192.png',
   './assets/icon-mask-512.png',
+  // Offline Bibles — bundled so fresh installs can look up scripture
+  // without any network round-trip. ~23 MB total across all 5.
+  './assets/bible/kjv.json',
+  './assets/bible/asv.json',
+  './assets/bible/bbe.json',
+  './assets/bible/ylt.json',
+  './assets/bible/ang.json',
 ];
 
 self.addEventListener('install', (event) => {
