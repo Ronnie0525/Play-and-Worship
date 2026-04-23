@@ -766,25 +766,27 @@ html, body {
   background-color: #05030f;
 }
 .stage.motion-neonburst::before {
-  /* Big soft coloured clouds slow-rotating like a nebula. */
+  /* Big soft coloured clouds rotating behind the particle layer. */
   content: '';
   position: absolute;
   top: 50%; left: 50%;
   width: 170vmax; height: 170vmax;
   transform: translate(-50%, -50%);
   background:
-    radial-gradient(ellipse at 30% 40%, rgba(0, 200, 255, 0.38), transparent 42%),
-    radial-gradient(ellipse at 70% 55%, rgba(200, 80, 255, 0.32), transparent 42%),
-    radial-gradient(ellipse at 55% 75%, rgba(255, 80, 180, 0.28), transparent 38%),
-    radial-gradient(ellipse at 20% 70%, rgba(120, 220, 255, 0.24), transparent 40%);
+    radial-gradient(ellipse at 30% 40%, rgba(0, 200, 255, 0.42), transparent 42%),
+    radial-gradient(ellipse at 70% 55%, rgba(200, 80, 255, 0.36), transparent 42%),
+    radial-gradient(ellipse at 55% 75%, rgba(255, 80, 180, 0.32), transparent 38%),
+    radial-gradient(ellipse at 20% 70%, rgba(120, 220, 255, 0.28), transparent 40%);
   filter: blur(55px);
-  animation: neonNebula 42s linear infinite;
+  animation: neonNebula 14s linear infinite;
   mix-blend-mode: screen;
   pointer-events: none;
   z-index: 0;
 }
 .stage.motion-neonburst::after {
-  /* Shiny neon 'stars' twinkling — mix of cyan / magenta / white. */
+  /* Neon particles that drift across the stage AND twinkle. The
+     background is tiled (repeat) so movement reads as continuous
+     streaming; two independent animations drive position + opacity. */
   content: '';
   position: absolute; inset: 0;
   background-image:
@@ -800,9 +802,16 @@ html, body {
     radial-gradient(3px 3px at 8% 55%, #00f0ff, transparent 65%),
     radial-gradient(4px 4px at 92% 32%, #ff50e0, transparent 65%),
     radial-gradient(5px 5px at 35% 38%, #ffffff, transparent 65%);
-  animation: neonTwinkle 2.6s ease-in-out infinite;
+  background-repeat: repeat;
+  background-size:
+    420px 520px, 360px 460px, 480px 580px, 320px 420px,
+    400px 500px, 380px 470px, 340px 440px, 460px 560px,
+    350px 430px, 390px 490px, 410px 510px, 370px 450px;
+  animation:
+    neonDrift 7s linear infinite,
+    neonTwinkle 2.6s ease-in-out infinite;
   mix-blend-mode: screen;
-  filter: drop-shadow(0 0 6px rgba(0, 240, 255, 0.55));
+  filter: drop-shadow(0 0 6px rgba(0, 240, 255, 0.6));
   pointer-events: none;
   z-index: 0;
 }
@@ -811,7 +820,23 @@ html, body {
 }
 @keyframes neonTwinkle {
   0%, 100% { opacity: 1.00; }
-  50%      { opacity: 0.35; }
+  50%      { opacity: 0.45; }
+}
+@keyframes neonDrift {
+  /* Each layer drifts in a different direction at a different speed so
+     the overall motion reads as a busy field of shimmering particles. */
+  from {
+    background-position:
+       0   0,   0   0,   0   0,   0   0,
+       0   0,   0   0,   0   0,   0   0,
+       0   0,   0   0,   0   0,   0   0;
+  }
+  to {
+    background-position:
+       420px -520px,  -360px  460px,  480px  580px,  -320px -420px,
+      -400px  500px,   380px -470px, -340px  440px,   460px -560px,
+       350px -430px,  -390px  490px,  410px -510px,  -370px  450px;
+  }
 }
 
 /* ---- Blue Embers: cool-toned embers rising (blue flame version) ---- */
