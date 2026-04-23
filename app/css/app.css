@@ -4194,16 +4194,17 @@ body.no-loader .login-gate { display: none; }
   content: '';
   position: absolute; inset: -15%;
   background:
-    radial-gradient(ellipse at 25% 35%, rgba(255, 250, 230, 0.18), transparent 55%),
-    radial-gradient(ellipse at 75% 70%, rgba(220, 230, 255, 0.14), transparent 55%);
-  animation: driftMotion 26s ease-in-out infinite alternate;
+    radial-gradient(ellipse at 25% 35%, rgba(255, 250, 230, 0.32), transparent 55%),
+    radial-gradient(ellipse at 75% 70%, rgba(220, 230, 255, 0.26), transparent 55%),
+    radial-gradient(ellipse at 55% 20%, rgba(255, 230, 180, 0.20), transparent 55%);
+  animation: driftMotion 18s ease-in-out infinite alternate;
   mix-blend-mode: screen;
   pointer-events: none;
   z-index: 0;
 }
 @keyframes driftMotion {
-  0%   { transform: translate(-4%, -3%) rotate(0deg); }
-  100% { transform: translate( 4%,  3%) rotate(6deg); }
+  0%   { transform: translate(-7%, -5%) rotate(0deg);  }
+  100% { transform: translate( 7%,  5%) rotate(12deg); }
 }
 
 /* ---- Bokeh: many orbs across two independent layers ---- */
@@ -4262,20 +4263,20 @@ body.no-loader .login-gate { display: none; }
   top: -40%; left: -40%;
   width: 180%; height: 180%;
   background: conic-gradient(from 0deg,
-    rgba(255, 245, 220, 0.10) 0deg,
-    transparent 20deg,
-    rgba(255, 235, 200, 0.08) 45deg,
-    transparent 75deg,
-    rgba(255, 245, 220, 0.09) 110deg,
+    rgba(255, 245, 220, 0.28) 0deg,
+    transparent 22deg,
+    rgba(255, 235, 200, 0.24) 48deg,
+    transparent 78deg,
+    rgba(255, 245, 220, 0.26) 114deg,
     transparent 150deg,
-    rgba(255, 230, 190, 0.07) 190deg,
-    transparent 230deg,
-    rgba(255, 245, 220, 0.09) 275deg,
+    rgba(255, 230, 190, 0.22) 192deg,
+    transparent 232deg,
+    rgba(255, 245, 220, 0.26) 276deg,
     transparent 320deg,
-    rgba(255, 245, 220, 0.10) 360deg);
+    rgba(255, 245, 220, 0.28) 360deg);
   transform-origin: center;
-  animation: raysSpin 140s linear infinite;
-  filter: blur(14px);
+  animation: raysSpin 55s linear infinite;
+  filter: blur(12px);
   mix-blend-mode: screen;
   -webkit-mask-image: radial-gradient(circle at center, #000 0%, rgba(0,0,0,0.6) 40%, transparent 80%);
   mask-image: radial-gradient(circle at center, #000 0%, rgba(0,0,0,0.6) 40%, transparent 80%);
@@ -4433,18 +4434,19 @@ body.no-loader .login-gate { display: none; }
   content: '';
   position: absolute; inset: -20%;
   background:
-    radial-gradient(ellipse at 22% 40%, rgba(255, 255, 255, 0.18), transparent 45%),
-    radial-gradient(ellipse at 72% 62%, rgba(255, 255, 255, 0.14), transparent 50%),
-    radial-gradient(ellipse at 50% 85%, rgba(255, 245, 225, 0.12), transparent 55%);
-  animation: mistDrift 46s ease-in-out infinite alternate;
-  filter: blur(18px);
+    radial-gradient(ellipse at 22% 40%, rgba(255, 255, 255, 0.32), transparent 45%),
+    radial-gradient(ellipse at 72% 62%, rgba(255, 255, 255, 0.26), transparent 50%),
+    radial-gradient(ellipse at 50% 85%, rgba(255, 245, 225, 0.24), transparent 55%),
+    radial-gradient(ellipse at 15% 80%, rgba(255, 255, 255, 0.22), transparent 50%);
+  animation: mistDrift 22s ease-in-out infinite alternate;
+  filter: blur(16px);
   mix-blend-mode: screen;
   pointer-events: none;
   z-index: 0;
 }
 @keyframes mistDrift {
-  0%   { transform: translate(-9%,  2%) scale(1.0); }
-  100% { transform: translate( 9%, -2%) scale(1.1); }
+  0%   { transform: translate(-14%,  3%) scale(1.0); }
+  100% { transform: translate( 14%, -3%) scale(1.15); }
 }
 
 /* ---- Waves ---- */
@@ -4455,20 +4457,20 @@ body.no-loader .login-gate { display: none; }
   background:
     linear-gradient(180deg,
       transparent 0%,
-      rgba(46, 115, 109, 0.22) 45%,
-      rgba(46, 115, 109, 0.32) 50%,
-      rgba(46, 115, 109, 0.22) 55%,
+      rgba(46, 115, 109, 0.36) 43%,
+      rgba(46, 115, 109, 0.50) 50%,
+      rgba(46, 115, 109, 0.36) 57%,
       transparent 100%),
     linear-gradient(180deg,
       transparent 0%,
-      rgba(200, 157, 74, 0.18) 66%,
-      rgba(200, 157, 74, 0.28) 72%,
-      rgba(200, 157, 74, 0.18) 78%,
+      rgba(200, 157, 74, 0.30) 64%,
+      rgba(200, 157, 74, 0.44) 72%,
+      rgba(200, 157, 74, 0.30) 80%,
       transparent 100%);
   background-size: 100% 300%, 100% 300%;
-  animation: wavesMove 26s ease-in-out infinite alternate;
+  animation: wavesMove 18s ease-in-out infinite alternate;
   mix-blend-mode: screen;
-  filter: blur(6px);
+  filter: blur(5px);
   pointer-events: none;
   z-index: 0;
 }
@@ -4493,19 +4495,19 @@ body.no-loader .login-gate { display: none; }
 .slide-preview.motion-particles::before,
 .monitor-stage.motion-particles::before {
   background-image:
-    radial-gradient(7px 7px at 20% 35%, rgba(255, 100, 150, 0.95), transparent 65%),
-    radial-gradient(5px 5px at 60% 70%, rgba(100, 200, 255, 0.90), transparent 65%),
-    radial-gradient(9px 9px at 85% 25%, rgba(255, 220, 100, 0.88), transparent 65%),
-    radial-gradient(6px 6px at 35% 80%, rgba(150, 255, 170, 0.90), transparent 65%);
+    radial-gradient(7px 7px at 20% 35%, rgba(227, 185, 110, 0.95), transparent 65%),  /* light gold */
+    radial-gradient(5px 5px at 60% 70%, rgba(255, 255, 255, 0.92), transparent 65%),  /* white      */
+    radial-gradient(9px 9px at 85% 25%, rgba(200, 157, 74,  0.90), transparent 65%),  /* gold       */
+    radial-gradient(6px 6px at 35% 80%, rgba(248, 236, 208, 0.90), transparent 65%);  /* cream      */
   background-size: 160px 210px, 130px 180px, 190px 240px, 140px 195px;
   animation: particlesWanderA 22s linear infinite;
 }
 .slide-preview.motion-particles::after,
 .monitor-stage.motion-particles::after {
   background-image:
-    radial-gradient(8px 8px at 75% 55%, rgba(200, 150, 255, 0.88), transparent 65%),
-    radial-gradient(5px 5px at 10% 60%, rgba(255, 170, 100, 0.92), transparent 65%),
-    radial-gradient(7px 7px at 50% 15%, rgba(120, 220, 200, 0.90), transparent 65%);
+    radial-gradient(8px 8px at 75% 55%, rgba(255, 255, 255, 0.90), transparent 65%),  /* white      */
+    radial-gradient(5px 5px at 10% 60%, rgba(227, 185, 110, 0.92), transparent 65%),  /* light gold */
+    radial-gradient(7px 7px at 50% 15%, rgba(200, 157, 74,  0.90), transparent 65%);  /* gold       */
   background-size: 175px 220px, 125px 170px, 155px 205px;
   animation: particlesWanderB 31s linear infinite;
 }
@@ -4847,11 +4849,11 @@ body.no-loader .login-gate { display: none; }
 }
 .tb-motion-swatch.motion-particles {
   background:
-    radial-gradient(1px 1px at 15% 30%, #ff6496, transparent),
-    radial-gradient(0.8px 0.8px at 60% 70%, #64c8ff, transparent),
-    radial-gradient(1px 1px at 80% 25%, #ffdc64, transparent),
-    radial-gradient(0.8px 0.8px at 35% 75%, #96ffaa, transparent),
-    radial-gradient(1px 1px at 70% 50%, #c896ff, transparent),
+    radial-gradient(1px 1px at 15% 30%, #E3B96E, transparent),
+    radial-gradient(0.8px 0.8px at 60% 70%, #ffffff, transparent),
+    radial-gradient(1px 1px at 80% 25%, #C89D4A, transparent),
+    radial-gradient(0.8px 0.8px at 35% 75%, #F8ECD0, transparent),
+    radial-gradient(1px 1px at 70% 50%, #ffffff, transparent),
     #0b1530;
   background-size: 100% 200%, 100% 200%, 100% 200%, 100% 200%, 100% 200%;
   animation: chipParticles 2.6s linear infinite;
@@ -5015,11 +5017,11 @@ body.no-loader .login-gate { display: none; }
 }
 .motion-menu-swatch.motion-particles {
   background:
-    radial-gradient(1px 1px at 15% 30%, #ff6496, transparent),
-    radial-gradient(0.8px 0.8px at 60% 70%, #64c8ff, transparent),
-    radial-gradient(1px 1px at 80% 25%, #ffdc64, transparent),
-    radial-gradient(0.8px 0.8px at 35% 75%, #96ffaa, transparent),
-    radial-gradient(1px 1px at 70% 50%, #c896ff, transparent),
+    radial-gradient(1px 1px at 15% 30%, #E3B96E, transparent),
+    radial-gradient(0.8px 0.8px at 60% 70%, #ffffff, transparent),
+    radial-gradient(1px 1px at 80% 25%, #C89D4A, transparent),
+    radial-gradient(0.8px 0.8px at 35% 75%, #F8ECD0, transparent),
+    radial-gradient(1px 1px at 70% 50%, #ffffff, transparent),
     #0b1530;
   background-size: 100% 200%, 100% 200%, 100% 200%, 100% 200%, 100% 200%;
   animation: chipParticles 2.6s linear infinite;

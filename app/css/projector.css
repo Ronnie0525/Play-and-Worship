@@ -316,16 +316,17 @@ html, body {
   content: '';
   position: absolute; inset: -15%;
   background:
-    radial-gradient(ellipse at 25% 35%, rgba(255, 250, 230, 0.18), transparent 55%),
-    radial-gradient(ellipse at 75% 70%, rgba(220, 230, 255, 0.14), transparent 55%);
-  animation: driftMotion 26s ease-in-out infinite alternate;
+    radial-gradient(ellipse at 25% 35%, rgba(255, 250, 230, 0.32), transparent 55%),
+    radial-gradient(ellipse at 75% 70%, rgba(220, 230, 255, 0.26), transparent 55%),
+    radial-gradient(ellipse at 55% 20%, rgba(255, 230, 180, 0.20), transparent 55%);
+  animation: driftMotion 18s ease-in-out infinite alternate;
   mix-blend-mode: screen;
   pointer-events: none;
   z-index: 0;
 }
 @keyframes driftMotion {
-  0%   { transform: translate(-4%, -3%) rotate(0deg); }
-  100% { transform: translate( 4%,  3%) rotate(6deg); }
+  0%   { transform: translate(-7%, -5%) rotate(0deg);  }
+  100% { transform: translate( 7%,  5%) rotate(12deg); }
 }
 
 /* ---- Bokeh: many blurred floating orbs, two independent layers ---- */
@@ -379,20 +380,20 @@ html, body {
   top: -40%; left: -40%;
   width: 180%; height: 180%;
   background: conic-gradient(from 0deg,
-    rgba(255, 245, 220, 0.10) 0deg,
-    transparent 20deg,
-    rgba(255, 235, 200, 0.08) 45deg,
-    transparent 75deg,
-    rgba(255, 245, 220, 0.09) 110deg,
+    rgba(255, 245, 220, 0.28) 0deg,
+    transparent 22deg,
+    rgba(255, 235, 200, 0.24) 48deg,
+    transparent 78deg,
+    rgba(255, 245, 220, 0.26) 114deg,
     transparent 150deg,
-    rgba(255, 230, 190, 0.07) 190deg,
-    transparent 230deg,
-    rgba(255, 245, 220, 0.09) 275deg,
+    rgba(255, 230, 190, 0.22) 192deg,
+    transparent 232deg,
+    rgba(255, 245, 220, 0.26) 276deg,
     transparent 320deg,
-    rgba(255, 245, 220, 0.10) 360deg);
+    rgba(255, 245, 220, 0.28) 360deg);
   transform-origin: center;
-  animation: raysSpin 140s linear infinite;
-  filter: blur(18px);
+  animation: raysSpin 55s linear infinite;
+  filter: blur(14px);
   mix-blend-mode: screen;
   -webkit-mask-image: radial-gradient(circle at center, #000 0%, rgba(0,0,0,0.6) 40%, transparent 80%);
   mask-image: radial-gradient(circle at center, #000 0%, rgba(0,0,0,0.6) 40%, transparent 80%);
@@ -546,18 +547,19 @@ html, body {
   content: '';
   position: absolute; inset: -20%;
   background:
-    radial-gradient(ellipse at 22% 40%, rgba(255, 255, 255, 0.18), transparent 45%),
-    radial-gradient(ellipse at 72% 62%, rgba(255, 255, 255, 0.14), transparent 50%),
-    radial-gradient(ellipse at 50% 85%, rgba(255, 245, 225, 0.12), transparent 55%);
-  animation: mistDrift 46s ease-in-out infinite alternate;
-  filter: blur(22px);
+    radial-gradient(ellipse at 22% 40%, rgba(255, 255, 255, 0.32), transparent 45%),
+    radial-gradient(ellipse at 72% 62%, rgba(255, 255, 255, 0.26), transparent 50%),
+    radial-gradient(ellipse at 50% 85%, rgba(255, 245, 225, 0.24), transparent 55%),
+    radial-gradient(ellipse at 15% 80%, rgba(255, 255, 255, 0.22), transparent 50%);
+  animation: mistDrift 22s ease-in-out infinite alternate;
+  filter: blur(20px);
   mix-blend-mode: screen;
   pointer-events: none;
   z-index: 0;
 }
 @keyframes mistDrift {
-  0%   { transform: translate(-9%,  2%) scale(1.0); }
-  100% { transform: translate( 9%, -2%) scale(1.1); }
+  0%   { transform: translate(-14%,  3%) scale(1.0); }
+  100% { transform: translate( 14%, -3%) scale(1.15); }
 }
 
 /* ---- Waves: horizontal undulating bands (horizon / water) ---- */
@@ -567,26 +569,26 @@ html, body {
   background:
     linear-gradient(180deg,
       transparent 0%,
-      rgba(46, 115, 109, 0.22) 45%,
-      rgba(46, 115, 109, 0.32) 50%,
-      rgba(46, 115, 109, 0.22) 55%,
+      rgba(46, 115, 109, 0.36) 43%,
+      rgba(46, 115, 109, 0.50) 50%,
+      rgba(46, 115, 109, 0.36) 57%,
       transparent 100%),
     linear-gradient(180deg,
       transparent 0%,
-      rgba(200, 157, 74, 0.18) 66%,
-      rgba(200, 157, 74, 0.28) 72%,
-      rgba(200, 157, 74, 0.18) 78%,
+      rgba(200, 157, 74, 0.30) 64%,
+      rgba(200, 157, 74, 0.44) 72%,
+      rgba(200, 157, 74, 0.30) 80%,
       transparent 100%);
   background-size: 100% 300%, 100% 300%;
-  animation: wavesMove 26s ease-in-out infinite alternate;
+  animation: wavesMove 18s ease-in-out infinite alternate;
   mix-blend-mode: screen;
-  filter: blur(8px);
+  filter: blur(6px);
   pointer-events: none;
   z-index: 0;
 }
 @keyframes wavesMove {
-  0%   { background-position: 0 -20%, 0  25%; }
-  100% { background-position: 0  30%, 0 -25%; }
+  0%   { background-position: 0 -25%, 0  30%; }
+  100% { background-position: 0  35%, 0 -30%; }
 }
 
 /* ---- Random Particles: multi-colored dots wandering independently ----
@@ -604,18 +606,18 @@ html, body {
 }
 .stage.motion-particles::before {
   background-image:
-    radial-gradient(10px 10px at 20% 35%, rgba(255, 100, 150, 0.95), transparent 65%),  /* pink   */
-    radial-gradient(8px 8px   at 60% 70%, rgba(100, 200, 255, 0.90), transparent 65%),  /* cyan   */
-    radial-gradient(13px 13px at 85% 25%, rgba(255, 220, 100, 0.88), transparent 65%),  /* yellow */
-    radial-gradient(9px 9px   at 35% 80%, rgba(150, 255, 170, 0.90), transparent 65%);  /* green  */
+    radial-gradient(10px 10px at 20% 35%, rgba(227, 185, 110, 0.95), transparent 65%),  /* light gold */
+    radial-gradient(8px 8px   at 60% 70%, rgba(255, 255, 255, 0.92), transparent 65%),  /* white      */
+    radial-gradient(13px 13px at 85% 25%, rgba(200, 157, 74,  0.90), transparent 65%),  /* gold       */
+    radial-gradient(9px 9px   at 35% 80%, rgba(248, 236, 208, 0.90), transparent 65%);  /* cream      */
   background-size: 240px 320px, 200px 280px, 280px 360px, 220px 300px;
   animation: particlesWanderA 22s linear infinite;
 }
 .stage.motion-particles::after {
   background-image:
-    radial-gradient(12px 12px at 75% 55%, rgba(200, 150, 255, 0.88), transparent 65%),  /* purple */
-    radial-gradient(8px 8px   at 10% 60%, rgba(255, 170, 100, 0.92), transparent 65%),  /* orange */
-    radial-gradient(11px 11px at 50% 15%, rgba(120, 220, 200, 0.90), transparent 65%);  /* mint   */
+    radial-gradient(12px 12px at 75% 55%, rgba(255, 255, 255, 0.90), transparent 65%),  /* white      */
+    radial-gradient(8px 8px   at 10% 60%, rgba(227, 185, 110, 0.92), transparent 65%),  /* light gold */
+    radial-gradient(11px 11px at 50% 15%, rgba(200, 157, 74,  0.90), transparent 65%);  /* gold       */
   background-size: 260px 340px, 190px 260px, 230px 310px;
   animation: particlesWanderB 31s linear infinite;
 }
