@@ -199,6 +199,29 @@ html, body {
     #000;
 }
 
+/* Timer finished — custom after-timer message takes over. */
+.stage.countdown.ended {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(200, 157, 74, 0.15) 0%, transparent 60%),
+    linear-gradient(180deg, #08090f 0%, #0a0f1a 100%);
+}
+.stage.countdown .cd-ended {
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-weight: 600;
+  font-size: 10vw;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: #F8ECD0;
+  text-align: center;
+  max-width: 88vw;
+  text-shadow: 0 6px 36px rgba(0, 0, 0, 0.6);
+  animation: cdEndedIn 0.9s cubic-bezier(.22, .61, .36, 1) both;
+}
+@keyframes cdEndedIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
 /* =============================================================
    Motion backgrounds for song / scripture slides.
    Each preset paints onto a pseudo-layer so the text stays

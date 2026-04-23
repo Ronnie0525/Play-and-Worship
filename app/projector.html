@@ -339,6 +339,12 @@
             stopCountdown();
             stage.classList.remove('final', 'critical');
             el.classList.remove('beat');
+            // Swap into the post-timer message if one was set.
+            if (slide.finalMessage && !stage.classList.contains('ended')) {
+              const msg = slide.finalMessage.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+              stage.classList.add('ended');
+              stage.innerHTML = `<div class="cd-ended">${msg}</div>`;
+            }
           }
         };
         tick();

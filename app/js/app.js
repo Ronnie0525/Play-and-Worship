@@ -1391,27 +1391,53 @@
       dd.className = 'menu-dropdown countdown-dropdown';
       dd.style.left = rect.left + 'px';
       dd.style.top  = rect.bottom + 'px';
-      dd.style.minWidth = `${Math.max(rect.width, 180)}px`;
-      dd.innerHTML = this._COUNTDOWN_OPTIONS.map(n => `
-        <button data-cd-min="${n}" class="countdown-menu-item">
-          <span class="countdown-menu-label">${n} minute${n === 1 ? '' : 's'}</span>
-          <span class="countdown-menu-duration">${String(n).padStart(2, '0')}:00</span>
-        </button>
-      `).join('');
+      dd.style.minWidth = `${Math.max(rect.width, 220)}px`;
+
+      const s = Store.getSettings();
+      const savedMsg = (s.countdownEndMessage != null)
+        ? String(s.countdownEndMessage)
+        : 'Welcome!';
+
+      dd.innerHTML = `
+        <div class="countdown-end-field">
+          <label for="cd-end-msg">Show after timer</label>
+          <input type="text" id="cd-end-msg" class="countdown-end-input" placeholder="Welcome!" value="${escapeAttr(savedMsg)}" maxlength="80" autocomplete="off">
+        </div>
+        <div class="countdown-divider"></div>
+        ${this._COUNTDOWN_OPTIONS.map(n => `
+          <button data-cd-min="${n}" class="countdown-menu-item">
+            <span class="countdown-menu-label">${n} minute${n === 1 ? '' : 's'}</span>
+            <span class="countdown-menu-duration">${String(n).padStart(2, '0')}:00</span>
+          </button>
+        `).join('')}
+      `;
+
+      const input = dd.querySelector('#cd-end-msg');
+      // Stop menu-close handlers from firing when interacting with the text
+      // field, and allow the user to type freely.
+      input.addEventListener('pointerdown', (e) => e.stopPropagation());
+      input.addEventListener('click', (e) => e.stopPropagation());
+
       dd.addEventListener('click', (e) => {
         const btn = e.target.closest('button[data-cd-min]');
         if (!btn) return;
-        this.startCountdown(Number(btn.dataset.cdMin));
+        const msg = (input.value || '').trim();
+        Store.setSetting('countdownEndMessage', msg);
+        this.startCountdown(Number(btn.dataset.cdMin), undefined, msg);
         this._closeMenus();
       });
       document.body.appendChild(dd);
+
+      // Gentle focus so the operator can tweak the message without an
+      // extra click; selecting the text lets them overwrite immediately.
+      setTimeout(() => { try { input.focus(); input.select(); } catch (_) {} }, 40);
     },
 
     // Build and push a countdown "slide" to the projector. The slide only
     // carries an end timestamp + label — the projector runs its own ticker
     // and renders MM:SS locally, which keeps the operator and projector
     // perfectly in sync without constant message traffic.
-    startCountdown(minutes, label) {
+    startCountdown(minutes, label, finalMessage) {
       const mins = Math.max(1, Number(minutes) || 1);
       const endsAt = Date.now() + mins * 60 * 1000;
       const slide = {
@@ -1419,6 +1445,7 @@
         kind: 'countdown',
         endsAt,
         label: label || 'Starts in',
+        finalMessage: finalMessage != null ? String(finalMessage) : '',
       };
       if (!Projector.isOpen()) Projector.open();
       Projector.showSlide(slide);
@@ -5741,6 +5768,12 @@ Second line here
             stage.__cdInterval = null;
             stage.classList.remove('final', 'critical');
             timeEl.classList.remove('beat');
+            // Swap the monitor into the post-timer message, matching
+            // what the projector window shows.
+            if (slide.finalMessage && !stage.classList.contains('ended')) {
+              stage.classList.add('ended');
+              stage.innerHTML = `<div class="cd-ended">${escapeHtml(slide.finalMessage)}</div>`;
+            }
           }
         };
         tick();
