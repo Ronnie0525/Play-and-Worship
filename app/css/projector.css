@@ -713,6 +713,160 @@ html, body {
   to   { background-position: 15px -220px, -20px -260px, 25px -200px, -10px -240px; }
 }
 
+/* ---- Blue Fire Particles: cool-toned plasma particles rising ---- */
+.stage.motion-bluefire::before,
+.stage.motion-bluefire::after {
+  content: '';
+  position: absolute; inset: 0;
+  background-repeat: repeat;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 0;
+}
+.stage.motion-bluefire {
+  background-color: #020814;
+}
+.stage.motion-bluefire::before {
+  /* Big, soft glowing plasma orbs drifting upward. */
+  background-image:
+    radial-gradient(14px 14px at 20% 70%, rgba(100, 200, 255, 0.95), transparent 65%),
+    radial-gradient(18px 18px at 65% 40%, rgba(60, 160, 255, 0.90),  transparent 65%),
+    radial-gradient(12px 12px at 82% 80%, rgba(180, 230, 255, 0.92), transparent 65%),
+    radial-gradient(16px 16px at 40% 30%, rgba(80, 180, 255, 0.92),  transparent 65%),
+    radial-gradient(11px 11px at 10% 50%, rgba(200, 230, 255, 0.88), transparent 65%);
+  background-size: 220px 400px, 260px 480px, 190px 360px, 200px 380px, 170px 320px;
+  filter: blur(4px);
+  animation: blueFireBig 22s linear infinite;
+}
+.stage.motion-bluefire::after {
+  /* Smaller bright sparks flying faster. */
+  background-image:
+    radial-gradient(3px 3px at 15% 60%, rgba(230, 245, 255, 1),    transparent 70%),
+    radial-gradient(2px 2px at 50% 80%, rgba(180, 220, 255, 0.95), transparent 70%),
+    radial-gradient(4px 4px at 75% 50%, rgba(120, 200, 255, 0.92), transparent 70%),
+    radial-gradient(2px 2px at 35% 25%, rgba(220, 240, 255, 0.95), transparent 70%),
+    radial-gradient(5px 5px at 90% 15%, rgba(60, 160, 255, 0.88),  transparent 70%),
+    radial-gradient(3px 3px at 5%  35%, rgba(200, 230, 255, 0.95), transparent 70%);
+  background-size: 140px 300px, 100px 240px, 170px 340px, 110px 260px, 150px 320px, 90px 220px;
+  filter: blur(0.5px);
+  animation: blueFireSmall 11s linear infinite;
+}
+@keyframes blueFireBig {
+  from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0; }
+  to   { background-position: 30px -400px, -40px -480px, 50px -360px, -30px -380px, 20px -320px; }
+}
+@keyframes blueFireSmall {
+  from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+  to   { background-position: 15px -300px, -25px -240px, 35px -340px, -20px -260px, 25px -320px, -10px -220px; }
+}
+
+/* ---- Neon Burst: radial neon lines + shimmering particles ---- */
+.stage.motion-neonburst {
+  background-color: #05030f;
+}
+.stage.motion-neonburst::before {
+  /* Rotating conic neon beams — sharp thin lines against the dark. */
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 180vmax; height: 180vmax;
+  transform: translate(-50%, -50%);
+  background: repeating-conic-gradient(from 0deg,
+    transparent 0deg 2.5deg,
+    rgba(0, 220, 255, 0.55) 2.5deg 3.2deg,
+    transparent 3.2deg 10deg,
+    rgba(255, 50, 180, 0.45) 10deg 10.8deg,
+    transparent 10.8deg 20deg,
+    rgba(120, 220, 255, 0.40) 20deg 20.7deg,
+    transparent 20.7deg 33deg);
+  filter: blur(1.2px);
+  -webkit-mask-image: radial-gradient(circle at center, #000 12%, rgba(0,0,0,0.75) 40%, transparent 78%);
+          mask-image: radial-gradient(circle at center, #000 12%, rgba(0,0,0,0.75) 40%, transparent 78%);
+  animation: neonSpin 9s linear infinite;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 0;
+}
+.stage.motion-neonburst::after {
+  /* Shiny particles pulsing outward from center in repeating bursts. */
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    radial-gradient(6px 6px at 50% 50%, rgba(255, 255, 255, 1),     transparent 60%),
+    radial-gradient(4px 4px at 20% 30%, rgba(0, 220, 255, 0.95),    transparent 60%),
+    radial-gradient(5px 5px at 82% 28%, rgba(255, 70, 200, 0.92),   transparent 60%),
+    radial-gradient(4px 4px at 22% 78%, rgba(120, 230, 255, 0.95),  transparent 60%),
+    radial-gradient(6px 6px at 78% 76%, rgba(255, 255, 255, 0.98),  transparent 60%),
+    radial-gradient(3px 3px at 50% 18%, rgba(180, 240, 255, 0.95),  transparent 60%),
+    radial-gradient(5px 5px at 50% 84%, rgba(230, 120, 255, 0.90),  transparent 60%),
+    radial-gradient(4px 4px at 15% 52%, rgba(0, 200, 255, 0.92),    transparent 60%),
+    radial-gradient(4px 4px at 88% 50%, rgba(255, 255, 255, 0.95),  transparent 60%);
+  background-repeat: no-repeat;
+  background-position: center;
+  transform-origin: center;
+  animation: neonExplode 3.4s ease-out infinite;
+  mix-blend-mode: screen;
+  filter: blur(0.6px);
+  pointer-events: none;
+  z-index: 0;
+}
+@keyframes neonSpin {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+@keyframes neonExplode {
+  0%   { transform: scale(0.4); opacity: 0.0; }
+  20%  { opacity: 1.0; }
+  80%  { opacity: 0.6; }
+  100% { transform: scale(1.9); opacity: 0.0; }
+}
+
+/* ---- Blue Embers: cool-toned embers rising (blue flame version) ---- */
+.stage.motion-blueembers::before,
+.stage.motion-blueembers::after {
+  content: '';
+  position: absolute; inset: 0;
+  background-repeat: repeat;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 0;
+}
+.stage.motion-blueembers {
+  background-color: #020812;
+}
+.stage.motion-blueembers::before {
+  /* Large, soft glowing blue embers with cool halos. */
+  background-image:
+    radial-gradient(12px 12px at 20% 70%, rgba(60, 180, 255, 0.95),  transparent 65%),
+    radial-gradient(16px 16px at 65% 40%, rgba(40, 150, 240, 0.88),  transparent 65%),
+    radial-gradient(10px 10px at 82% 80%, rgba(150, 220, 255, 0.92), transparent 65%),
+    radial-gradient(14px 14px at 40% 30%, rgba(70, 170, 255, 0.92),  transparent 65%),
+    radial-gradient(9px 9px   at 10% 50%, rgba(180, 230, 255, 0.88), transparent 65%);
+  background-size: 220px 400px, 260px 480px, 190px 360px, 200px 380px, 170px 320px;
+  filter: blur(3px);
+  animation: blueEmbersBig 22s linear infinite;
+}
+.stage.motion-blueembers::after {
+  /* Smaller bright blue-white sparks shooting up faster. */
+  background-image:
+    radial-gradient(3px 3px at 15% 60%, rgba(220, 240, 255, 1),    transparent 70%),
+    radial-gradient(2px 2px at 50% 80%, rgba(180, 220, 255, 0.95), transparent 70%),
+    radial-gradient(4px 4px at 75% 50%, rgba(120, 200, 255, 0.9),  transparent 70%),
+    radial-gradient(2px 2px at 35% 25%, rgba(210, 235, 255, 0.95), transparent 70%),
+    radial-gradient(5px 5px at 90% 15%, rgba(80, 170, 255, 0.88),  transparent 70%),
+    radial-gradient(3px 3px at 5%  35%, rgba(200, 230, 255, 0.95), transparent 70%);
+  background-size: 140px 300px, 100px 240px, 170px 340px, 110px 260px, 150px 320px, 90px 220px;
+  filter: blur(0.5px);
+  animation: blueEmbersSmall 12s linear infinite;
+}
+@keyframes blueEmbersBig {
+  from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0; }
+  to   { background-position: 30px -400px, -40px -480px, 50px -360px, -30px -380px, 20px -320px; }
+}
+@keyframes blueEmbersSmall {
+  from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+  to   { background-position: 15px -300px, -25px -240px, 35px -340px, -20px -260px, 25px -320px, -10px -220px; }
+}
+
 /* ---- Breathe: gentle brightness + saturation pulse on base ---- */
 .stage.motion-breathe {
   animation: breathePulse 9s ease-in-out infinite;

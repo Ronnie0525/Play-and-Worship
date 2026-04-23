@@ -1866,15 +1866,18 @@
     // -------- Session motion picker --------
 
     _MOTION_PRESETS: [
-      ['none',      'None'],
-      ['bokeh',     'Bokeh'],
-      ['rays',      'Rays'],
-      ['aurora',    'Aurora'],
-      ['starfield', 'Starfield'],
-      ['embers',    'Embers'],
-      ['waves',     'Waves'],
-      ['particles', 'Random Particles'],
-      ['fireflux',  'Fire Flux'],
+      ['none',       'None'],
+      ['bokeh',      'Bokeh'],
+      ['rays',       'Rays'],
+      ['aurora',     'Aurora'],
+      ['starfield',  'Starfield'],
+      ['embers',     'Embers'],
+      ['waves',      'Waves'],
+      ['particles',  'Random Particles'],
+      ['fireflux',   'Fire Flux'],
+      ['bluefire',   'Blue Fire'],
+      ['neonburst',  'Neon Burst'],
+      ['blueembers', 'Blue Embers'],
     ],
 
     _refreshMotionButton() {

@@ -4620,6 +4620,152 @@ body.no-loader .login-gate { display: none; }
   50%      { filter: brightness(1.18) saturate(1.15); }
 }
 
+/* ---- Blue Fire (monitor + preview thumbnail) ---- */
+.slide-preview.motion-bluefire,
+.monitor-stage.motion-bluefire { background-color: #020814; }
+.slide-preview.motion-bluefire::before,
+.slide-preview.motion-bluefire::after,
+.monitor-stage.motion-bluefire::before,
+.monitor-stage.motion-bluefire::after {
+  content: '';
+  position: absolute; inset: 0;
+  background-repeat: repeat;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 0;
+}
+.slide-preview.motion-bluefire::before,
+.monitor-stage.motion-bluefire::before {
+  background-image:
+    radial-gradient(6px 6px at 20% 70%, rgba(100, 200, 255, 0.95), transparent 65%),
+    radial-gradient(8px 8px at 65% 40%, rgba(60, 160, 255, 0.90),  transparent 65%),
+    radial-gradient(5px 5px at 82% 80%, rgba(180, 230, 255, 0.92), transparent 65%),
+    radial-gradient(7px 7px at 40% 30%, rgba(80, 180, 255, 0.92),  transparent 65%),
+    radial-gradient(5px 5px at 10% 50%, rgba(200, 230, 255, 0.88), transparent 65%);
+  background-size: 120px 220px, 140px 260px, 100px 190px, 110px 200px, 95px 180px;
+  filter: blur(2px);
+  animation: blueFireBig 22s linear infinite;
+}
+.slide-preview.motion-bluefire::after,
+.monitor-stage.motion-bluefire::after {
+  background-image:
+    radial-gradient(2px 2px at 15% 60%, rgba(230, 245, 255, 1),    transparent 70%),
+    radial-gradient(1.5px 1.5px at 50% 80%, rgba(180, 220, 255, 0.95), transparent 70%),
+    radial-gradient(2.5px 2.5px at 75% 50%, rgba(120, 200, 255, 0.92), transparent 70%),
+    radial-gradient(1.5px 1.5px at 35% 25%, rgba(220, 240, 255, 0.95), transparent 70%),
+    radial-gradient(3px 3px at 90% 15%, rgba(60, 160, 255, 0.88), transparent 70%);
+  background-size: 80px 170px, 60px 140px, 100px 200px, 65px 150px, 90px 185px;
+  animation: blueFireSmall 11s linear infinite;
+}
+@keyframes blueFireBig {
+  from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0; }
+  to   { background-position: 30px -400px, -40px -480px, 50px -360px, -30px -380px, 20px -320px; }
+}
+@keyframes blueFireSmall {
+  from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0; }
+  to   { background-position: 15px -300px, -25px -240px, 35px -340px, -20px -260px, 25px -320px; }
+}
+
+/* ---- Neon Burst (monitor + preview thumbnail) ---- */
+.slide-preview.motion-neonburst,
+.monitor-stage.motion-neonburst { background-color: #05030f; }
+.slide-preview.motion-neonburst::before,
+.monitor-stage.motion-neonburst::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 220%; height: 220%;
+  transform: translate(-50%, -50%);
+  background: repeating-conic-gradient(from 0deg,
+    transparent 0deg 2.5deg,
+    rgba(0, 220, 255, 0.55) 2.5deg 3.2deg,
+    transparent 3.2deg 10deg,
+    rgba(255, 50, 180, 0.45) 10deg 10.8deg,
+    transparent 10.8deg 20deg,
+    rgba(120, 220, 255, 0.40) 20deg 20.7deg,
+    transparent 20.7deg 33deg);
+  filter: blur(1px);
+  -webkit-mask-image: radial-gradient(circle at center, #000 12%, rgba(0,0,0,0.75) 40%, transparent 78%);
+          mask-image: radial-gradient(circle at center, #000 12%, rgba(0,0,0,0.75) 40%, transparent 78%);
+  animation: neonSpin 9s linear infinite;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 0;
+}
+.slide-preview.motion-neonburst::after,
+.monitor-stage.motion-neonburst::after {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    radial-gradient(3px 3px at 50% 50%, rgba(255, 255, 255, 1),    transparent 60%),
+    radial-gradient(2px 2px at 20% 30%, rgba(0, 220, 255, 0.95),   transparent 60%),
+    radial-gradient(2.5px 2.5px at 82% 28%, rgba(255, 70, 200, 0.92), transparent 60%),
+    radial-gradient(2px 2px at 22% 78%, rgba(120, 230, 255, 0.95), transparent 60%),
+    radial-gradient(3px 3px at 78% 76%, rgba(255, 255, 255, 0.98), transparent 60%),
+    radial-gradient(1.5px 1.5px at 50% 18%, rgba(180, 240, 255, 0.95), transparent 60%),
+    radial-gradient(2.5px 2.5px at 50% 84%, rgba(230, 120, 255, 0.90), transparent 60%);
+  background-repeat: no-repeat;
+  background-position: center;
+  transform-origin: center;
+  animation: neonExplode 3.4s ease-out infinite;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 0;
+}
+@keyframes neonSpin  { to { transform: translate(-50%, -50%) rotate(360deg); } }
+@keyframes neonExplode {
+  0%   { transform: scale(0.4); opacity: 0.0; }
+  20%  { opacity: 1.0; }
+  80%  { opacity: 0.6; }
+  100% { transform: scale(1.9); opacity: 0.0; }
+}
+
+/* ---- Blue Embers (monitor + preview thumbnail) ---- */
+.slide-preview.motion-blueembers,
+.monitor-stage.motion-blueembers { background-color: #020812; }
+.slide-preview.motion-blueembers::before,
+.slide-preview.motion-blueembers::after,
+.monitor-stage.motion-blueembers::before,
+.monitor-stage.motion-blueembers::after {
+  content: '';
+  position: absolute; inset: 0;
+  background-repeat: repeat;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 0;
+}
+.slide-preview.motion-blueembers::before,
+.monitor-stage.motion-blueembers::before {
+  background-image:
+    radial-gradient(6px 6px at 20% 70%, rgba(60, 180, 255, 0.95),  transparent 65%),
+    radial-gradient(8px 8px at 65% 40%, rgba(40, 150, 240, 0.88),  transparent 65%),
+    radial-gradient(5px 5px at 82% 80%, rgba(150, 220, 255, 0.92), transparent 65%),
+    radial-gradient(7px 7px at 40% 30%, rgba(70, 170, 255, 0.92),  transparent 65%),
+    radial-gradient(5px 5px at 10% 50%, rgba(180, 230, 255, 0.88), transparent 65%);
+  background-size: 120px 220px, 140px 260px, 100px 190px, 110px 200px, 95px 180px;
+  filter: blur(1.5px);
+  animation: blueEmbersBig 22s linear infinite;
+}
+.slide-preview.motion-blueembers::after,
+.monitor-stage.motion-blueembers::after {
+  background-image:
+    radial-gradient(2px 2px at 15% 60%, rgba(220, 240, 255, 1),    transparent 70%),
+    radial-gradient(1.5px 1.5px at 50% 80%, rgba(180, 220, 255, 0.95), transparent 70%),
+    radial-gradient(2.5px 2.5px at 75% 50%, rgba(120, 200, 255, 0.9),  transparent 70%),
+    radial-gradient(1.5px 1.5px at 35% 25%, rgba(210, 235, 255, 0.95), transparent 70%),
+    radial-gradient(3px 3px at 90% 15%, rgba(80, 170, 255, 0.88),  transparent 70%);
+  background-size: 80px 170px, 60px 140px, 100px 200px, 65px 150px, 90px 185px;
+  animation: blueEmbersSmall 12s linear infinite;
+}
+@keyframes blueEmbersBig {
+  from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0; }
+  to   { background-position: 30px -400px, -40px -480px, 50px -360px, -30px -380px, 20px -320px; }
+}
+@keyframes blueEmbersSmall {
+  from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0; }
+  to   { background-position: 15px -300px, -25px -240px, 35px -340px, -20px -260px, 25px -320px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .slide-preview[class*="motion-"]::before,
   .slide-preview[class*="motion-"]::after,
@@ -4913,6 +5059,58 @@ body.no-loader .login-gate { display: none; }
 @keyframes chipFireflux {
   0%, 100% { filter: brightness(1) saturate(1); transform: scaleY(1); }
   50%      { filter: brightness(1.25) saturate(1.2); transform: scaleY(1.08); }
+}
+
+/* Swatches for the new blue presets. Shared across the toolbar chip
+   and the dropdown menu icon so both match what hits the projector. */
+.tb-motion-swatch.motion-bluefire,
+.motion-menu-swatch.motion-bluefire {
+  background:
+    radial-gradient(1px 1px at 20% 80%, #64c8ff, transparent),
+    radial-gradient(0.8px 0.8px at 55% 60%, #afeeee, transparent),
+    radial-gradient(1px 1px at 80% 40%, #1E90FF, transparent),
+    radial-gradient(0.8px 0.8px at 35% 30%, #DBF0FF, transparent),
+    radial-gradient(1px 1px at 70% 15%, #64c8ff, transparent),
+    #020814;
+  background-size: 100% 200%, 100% 200%, 100% 200%, 100% 200%, 100% 200%;
+  animation: chipBlueFire 2.4s linear infinite;
+}
+@keyframes chipBlueFire {
+  from { background-position: 0 100%, 0 100%, 0 100%, 0 100%, 0 100%, 0 0; }
+  to   { background-position: 0 -100%, 0 -100%, 0 -100%, 0 -100%, 0 -100%, 0 0; }
+}
+
+.tb-motion-swatch.motion-neonburst,
+.motion-menu-swatch.motion-neonburst {
+  background:
+    repeating-conic-gradient(from 0deg,
+      transparent 0deg 6deg,
+      rgba(0, 220, 255, 0.7) 6deg 7deg,
+      transparent 7deg 16deg,
+      rgba(255, 70, 200, 0.6) 16deg 17deg,
+      transparent 17deg 30deg),
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,0.8), transparent 25%),
+    #05030f;
+  animation: chipNeonBurst 3.2s linear infinite;
+}
+@keyframes chipNeonBurst {
+  from { filter: hue-rotate(0deg); }
+  to   { filter: hue-rotate(360deg); }
+}
+
+.tb-motion-swatch.motion-blueembers,
+.motion-menu-swatch.motion-blueembers {
+  background:
+    radial-gradient(1px 1px at 30% 60%, rgba(120, 200, 255, 1), transparent),
+    radial-gradient(0.8px 0.8px at 65% 40%, rgba(60, 170, 255, 1), transparent),
+    radial-gradient(1px 1px at 80% 70%, rgba(200, 230, 255, 0.95), transparent),
+    #021026;
+  background-size: 100% 200%;
+  animation: chipBlueEmbers 2s linear infinite;
+}
+@keyframes chipBlueEmbers {
+  from { background-position: 0 100%, 0 100%, 0 100%, 0 0; }
+  to   { background-position: 0 -100%, 0 -100%, 0 -100%, 0 0; }
 }
 
 .tb-motion-label {
