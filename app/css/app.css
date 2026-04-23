@@ -3668,29 +3668,32 @@ body.no-loader .login-gate { display: none; }
     0 4px 12px -4px rgba(46, 115, 109, 0.45);
 }
 
-/* Category toggle (Worship / Hymns) — mirrors language toggle, placed below it. */
-.lib-cat-toggle {
+/* Songs-tab filter row: [Worship] [Hymns] [Language ▾] on one line. */
+.lib-filter-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 4px;
-  padding: 6px 8px 8px;
+  padding: 8px 8px;
   background: var(--panel-2);
   border-bottom: 1px solid var(--border-2);
 }
-.lib-cat-btn {
-  padding: 7px 10px;
+.lib-cat-btn,
+.lib-lang-trigger {
+  padding: 7px 6px;
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 6px;
   color: var(--ink-3);
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   cursor: pointer;
   transition: background .15s, color .15s, border-color .15s, box-shadow .15s;
+  min-width: 0;
 }
-.lib-cat-btn:hover {
+.lib-cat-btn:hover,
+.lib-lang-trigger:hover {
   background: var(--panel-3);
   color: var(--ink);
   border-color: rgba(200, 157, 74, 0.35);
@@ -3702,6 +3705,68 @@ body.no-loader .login-gate { display: none; }
   box-shadow:
     0 0 0 1px rgba(200, 157, 74, 0.25),
     0 4px 12px -4px rgba(200, 157, 74, 0.35);
+}
+
+/* Language dropdown */
+.lib-lang-dd { position: relative; min-width: 0; }
+.lib-lang-trigger {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.lib-lang-trigger[aria-expanded="true"] {
+  border-color: var(--myrtle, #2E736D);
+  color: var(--ink);
+}
+.lib-lang-trigger #lib-lang-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lib-lang-chev {
+  font-size: 9px;
+  color: var(--ink-3);
+  transform: translateY(1px);
+}
+.lib-lang-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 140px;
+  padding: 4px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.lib-lang-menu.hidden { display: none; }
+.lib-lang-item {
+  padding: 7px 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background .12s, color .12s, border-color .12s;
+}
+.lib-lang-item:hover {
+  background: var(--panel-3);
+  color: var(--ink);
+}
+.lib-lang-item.active {
+  color: var(--myrtle-h, #3A8B85);
+  background: rgba(46, 115, 109, 0.12);
+  border-color: rgba(46, 115, 109, 0.3);
 }
 
 /* Music library — upload button + track rows */

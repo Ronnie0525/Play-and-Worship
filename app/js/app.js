@@ -2193,14 +2193,21 @@
       const category = this.state.songCategory || 'worship';
       const placeholder = category === 'hymnal' ? 'Search hymns…' : 'Search songs…';
       const curLang = this.state.songLanguage || 'en';
+      const langLabel = curLang === 'tl' ? 'Tagalog' : 'English';
       body.innerHTML = `
-        <div class="lib-lang-toggle">
-          <button class="lib-lang-btn${curLang === 'en' ? ' active' : ''}" data-lang="en">English</button>
-          <button class="lib-lang-btn${curLang === 'tl' ? ' active' : ''}" data-lang="tl">Tagalog</button>
-        </div>
-        <div class="lib-cat-toggle">
+        <div class="lib-filter-row">
           <button class="lib-cat-btn${category === 'worship' ? ' active' : ''}" data-cat="worship" data-tip="Praise and Worship songs">Worship</button>
           <button class="lib-cat-btn${category === 'hymnal' ? ' active' : ''}" data-cat="hymnal" data-tip="Hymnal">Hymns</button>
+          <div class="lib-lang-dd">
+            <button class="lib-lang-trigger" id="lib-lang-trigger" aria-haspopup="menu" aria-expanded="false" data-tip="Filter by song language">
+              <span id="lib-lang-label">${langLabel}</span>
+              <span class="lib-lang-chev">▾</span>
+            </button>
+            <div class="lib-lang-menu hidden" id="lib-lang-menu" role="menu">
+              <button role="menuitem" class="lib-lang-item${curLang === 'en' ? ' active' : ''}" data-lang="en">English</button>
+              <button role="menuitem" class="lib-lang-item${curLang === 'tl' ? ' active' : ''}" data-lang="tl">Tagalog</button>
+            </div>
+          </div>
         </div>
         <div class="lib-search">
           <div class="search-box">
@@ -2217,20 +2224,42 @@
 
       this._renderSongList(body);
 
-      $$('.lib-lang-btn', body).forEach(btn => {
-        btn.addEventListener('click', () => {
-          this.state.songLanguage = btn.dataset.lang;
-          Store.setSetting('songLanguage', this.state.songLanguage);
-          $$('.lib-lang-btn', body).forEach(x => x.classList.toggle('active', x === btn));
-          this._renderSongList(body);
-        });
-      });
       $$('.lib-cat-btn', body).forEach(btn => {
         btn.addEventListener('click', () => {
           this.state.songCategory = btn.dataset.cat;
           Store.setSetting('songCategory', this.state.songCategory);
           // Full re-render so the search placeholder + newSong default update too.
           this._renderLibrarySongs(body);
+        });
+      });
+
+      // Language dropdown — click trigger to open, click outside or an item to close.
+      const trigger = $('#lib-lang-trigger', body);
+      const menu    = $('#lib-lang-menu', body);
+      const label   = $('#lib-lang-label', body);
+      const closeMenu = () => {
+        menu.classList.add('hidden');
+        trigger.setAttribute('aria-expanded', 'false');
+        document.removeEventListener('click', onDocClick, true);
+      };
+      const onDocClick = (e) => {
+        if (!menu.contains(e.target) && !trigger.contains(e.target)) closeMenu();
+      };
+      trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const open = menu.classList.toggle('hidden');
+        trigger.setAttribute('aria-expanded', open ? 'false' : 'true');
+        if (!open) document.addEventListener('click', onDocClick, true);
+        else document.removeEventListener('click', onDocClick, true);
+      });
+      $$('.lib-lang-item', menu).forEach(btn => {
+        btn.addEventListener('click', () => {
+          this.state.songLanguage = btn.dataset.lang;
+          Store.setSetting('songLanguage', this.state.songLanguage);
+          label.textContent = btn.dataset.lang === 'tl' ? 'Tagalog' : 'English';
+          $$('.lib-lang-item', menu).forEach(x => x.classList.toggle('active', x === btn));
+          closeMenu();
+          this._renderSongList(body);
         });
       });
       $('#lib-song-search', body).addEventListener('input', (e) => {
