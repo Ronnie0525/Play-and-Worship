@@ -3068,7 +3068,7 @@
     },
     _cdPrimeAudio() { this._cdCtx(); },
 
-    // Generic tone player. duration in seconds, volume 0..1.
+    // Generic sine-tone player (used by the final bell). Volume 0..1.
     _cdPlayTone(freq, duration, volume, type = 'sine') {
       const ctx = this._cdCtx();
       if (!ctx) return;
@@ -3085,20 +3085,71 @@
       osc.stop(now + duration + 0.02);
     },
 
-    // Soft metronome click for seconds 10..4.
-    _cdTick() { this._cdPlayTone(1200, 0.04, 0.10, 'sine'); },
-
-    // Warm chime for 3 / 2 / 1.
-    _cdChime() {
-      this._cdPlayTone(659.25, 0.22, 0.18, 'sine'); // E5
-      this._cdPlayTone(523.25, 0.22, 0.10, 'sine'); // C5 (subtle harmonic)
+    // Mechanical clock click — filtered noise burst. Different centre
+    // frequencies give 'tik' (bright/high) vs 'tak' (dark/low), which
+    // is what makes a real wooden clock sound alive.
+    _cdPlayClick(freq, duration, volume) {
+      const ctx = this._cdCtx();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      const bufSize = Math.max(64, Math.floor(ctx.sampleRate * duration));
+      const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < bufSize; i++) {
+        // Linearly-decaying white noise gives a natural click envelope
+        data[i] = (Math.random() * 2 - 1) * (1 - i / bufSize);
+      }
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.setValueAtTime(freq, now);
+      bp.Q.setValueAtTime(6.5, now);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, now);
+      g.gain.exponentialRampToValueAtTime(volume, now + 0.003);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+      src.connect(bp).connect(g).connect(ctx.destination);
+      src.start(now);
+      src.stop(now + duration + 0.02);
     },
 
-    // Soft bell chord at 0 when the after-timer message arrives.
-    _cdBell() {
-      this._cdPlayTone(523.25, 0.9, 0.16, 'sine');  // C5
-      this._cdPlayTone(659.25, 0.9, 0.12, 'sine');  // E5
-      this._cdPlayTone(783.99, 0.9, 0.09, 'sine');  // G5
+    // Tik — bright click (odd seconds).
+    _cdTik() { this._cdPlayClick(3500, 0.028, 0.34); },
+
+    // Tak — darker click (even seconds).
+    _cdTak() { this._cdPlayClick(2000, 0.030, 0.36); },
+
+    // Professional final bell — a layered chord (C4 root + C5/E5/G5/C6
+    // overtones) with a subtle mallet-strike transient for weight.
+    _cdFinalBell() {
+      const ctx = this._cdCtx();
+      if (!ctx) return;
+      // Strike transient first — noise flash that gives the bell its
+      // 'struck' attack instead of materializing from nothing.
+      this._cdPlayClick(800, 0.035, 0.22);
+      const now = ctx.currentTime;
+      const partials = [
+        { f: 261.63, v: 0.22, decay: 2.4 },  // C4 — root
+        { f: 523.25, v: 0.18, decay: 2.0 },  // C5
+        { f: 659.25, v: 0.14, decay: 1.8 },  // E5
+        { f: 783.99, v: 0.11, decay: 1.6 },  // G5
+        { f: 1046.5, v: 0.07, decay: 1.2 },  // C6 — shimmer
+      ];
+      partials.forEach(({ f, v, decay }, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(f, now);
+        // Tiny detune per-partial for a less 'synthetic' feel.
+        osc.detune.setValueAtTime((i % 2 ? 2.5 : -2.5), now);
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(v, now + 0.018);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + decay);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + decay + 0.05);
+      });
     },
 
     _formatTime(sec) {
@@ -6071,12 +6122,19 @@ Second line here
               void timeEl.offsetWidth;
               timeEl.classList.add('beat');
             }
-            // Sound cue — tick at 10..4, warm chime at 3/2/1. Skip the
-            // very first settle call (prevSec === -1) so we don't fire
-            // mid-second when the slide first mounts.
+            // Sound cue — alternating tik/tak from 10s..5s (one per
+            // second), then double-time (tik + tak together) at 4s..1s.
+            // Skip the first settle call so we don't fire mid-second.
             if (slide.sound && prevSec !== -1 && totalSec > 0 && totalSec < prevSec) {
-              if (totalSec >= 4 && totalSec <= 10)   this._cdTick();
-              else if (totalSec >= 1 && totalSec <= 3) this._cdChime();
+              if (totalSec >= 5 && totalSec <= 10) {
+                // One click per second, alternating high/low like a clock.
+                if (totalSec % 2 === 0) this._cdTik();
+                else                    this._cdTak();
+              } else if (totalSec >= 1 && totalSec <= 4) {
+                // Double-time rush — tik now, tak ~300ms later.
+                this._cdTik();
+                setTimeout(() => this._cdTak(), 300);
+              }
             }
           }
 
@@ -6085,7 +6143,7 @@ Second line here
             stage.__cdInterval = null;
             stage.classList.remove('final', 'critical');
             timeEl.classList.remove('beat');
-            if (slide.sound) this._cdBell();
+            if (slide.sound) this._cdFinalBell();
             // Swap the monitor into the post-timer message, matching
             // what the projector window shows — including the
             // typewriter effect.
