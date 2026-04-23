@@ -3,7 +3,7 @@
   "short_name": "P&Worship",
   "description": "Modern worship presentation — songs, scripture, media, and a dedicated live projector.",
   "start_url": "./app/",
-  "scope": "./",
+  "scope": "./app/",
   "display": "standalone",
   "orientation": "landscape",
   "background_color": "#08090f",
