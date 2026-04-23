@@ -6491,22 +6491,20 @@ body.no-loader .login-gate { display: none; }
 .monitor-stage.music .mon-music-disc {
   width: 48px; height: 48px;
   border-radius: 50%;
-  background: radial-gradient(circle at 40% 35%, #c89d4a 0%, #8e6b2b 55%, #3a2a0f 100%);
+  background: radial-gradient(circle at 40% 35%, #E3B96E 0%, #C89D4A 55%, #8e6b2b 100%);
   box-shadow:
     0 0 0 3px rgba(200, 157, 74, 0.18),
     0 6px 18px rgba(0, 0, 0, 0.55),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.14);
   animation: monMusicSpin 8s linear infinite;
   position: relative;
 }
 .monitor-stage.music .mon-music-disc::after {
   content: '';
   position: absolute;
-  left: 50%; top: 50%;
-  transform: translate(-50%, -50%);
-  width: 22%; height: 22%;
+  inset: 22%;
   border-radius: 50%;
-  background: #0a0f1a;
+  border: 1px dashed rgba(255, 255, 255, 0.22);
 }
 .monitor-stage.music.paused .mon-music-disc { animation-play-state: paused; }
 @keyframes monMusicSpin { to { transform: rotate(360deg); } }
