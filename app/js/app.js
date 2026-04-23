@@ -1407,12 +1407,17 @@
       const savedMsg = (s.countdownEndMessage != null)
         ? String(s.countdownEndMessage)
         : 'Welcome!';
+      const savedSound = !!s.countdownSound;
 
       dd.innerHTML = `
         <div class="countdown-end-field">
           <label for="cd-end-msg">Show after timer</label>
           <input type="text" id="cd-end-msg" class="countdown-end-input" placeholder="Welcome!" value="${escapeAttr(savedMsg)}" maxlength="80" autocomplete="off">
         </div>
+        <label class="countdown-sound-toggle" for="cd-sound">
+          <input type="checkbox" id="cd-sound" ${savedSound ? 'checked' : ''}>
+          <span>Play ticking sound in the last 10s</span>
+        </label>
         <div class="countdown-divider"></div>
         ${this._COUNTDOWN_OPTIONS.map(n => `
           <button data-cd-min="${n}" class="countdown-menu-item">
@@ -1423,17 +1428,27 @@
       `;
 
       const input = dd.querySelector('#cd-end-msg');
+      const sound = dd.querySelector('#cd-sound');
       // Stop menu-close handlers from firing when interacting with the text
-      // field, and allow the user to type freely.
-      input.addEventListener('pointerdown', (e) => e.stopPropagation());
-      input.addEventListener('click', (e) => e.stopPropagation());
+      // field / checkbox, and allow the user to type / toggle freely.
+      ['pointerdown', 'click'].forEach(ev => {
+        input.addEventListener(ev, (e) => e.stopPropagation());
+        sound.addEventListener(ev, (e) => e.stopPropagation());
+        sound.parentElement.addEventListener(ev, (e) => e.stopPropagation());
+      });
 
       dd.addEventListener('click', (e) => {
         const btn = e.target.closest('button[data-cd-min]');
         if (!btn) return;
         const msg = (input.value || '').trim();
+        const wantSound = !!sound.checked;
         Store.setSetting('countdownEndMessage', msg);
-        this.startCountdown(Number(btn.dataset.cdMin), undefined, msg);
+        Store.setSetting('countdownSound', wantSound);
+        // Prime the AudioContext now, while we're still in the user's click.
+        // Browsers require a user gesture to start audio; doing it here means
+        // the first tick fires without a resume hiccup.
+        if (wantSound) this._cdPrimeAudio();
+        this.startCountdown(Number(btn.dataset.cdMin), undefined, msg, wantSound);
         this._closeMenus();
       });
       document.body.appendChild(dd);
@@ -1447,7 +1462,7 @@
     // carries an end timestamp + label — the projector runs its own ticker
     // and renders MM:SS locally, which keeps the operator and projector
     // perfectly in sync without constant message traffic.
-    startCountdown(minutes, label, finalMessage) {
+    startCountdown(minutes, label, finalMessage, sound) {
       const mins = Math.max(1, Number(minutes) || 1);
       const endsAt = Date.now() + mins * 60 * 1000;
       const slide = {
@@ -1456,6 +1471,7 @@
         endsAt,
         label: label || 'Starts in',
         finalMessage: finalMessage != null ? String(finalMessage) : '',
+        sound: !!sound,
       };
       if (!Projector.isOpen()) Projector.open();
       Projector.showSlide(slide);
@@ -3031,6 +3047,58 @@
       host.style.top  = saved.top  + 'px';
       host.style.right = 'auto';
       host.style.bottom = 'auto';
+    },
+
+    // ---- Countdown audio (Web Audio API, synthesized tones — no files) ----
+    // Primed from inside the user click that starts the countdown so the
+    // browser's autoplay gate is satisfied; later ticks call _cdCtx() and
+    // reuse the same AudioContext.
+    _cdCtx() {
+      if (!this._cdAudio) {
+        try {
+          const Ctx = window.AudioContext || window.webkitAudioContext;
+          if (!Ctx) return null;
+          this._cdAudio = new Ctx();
+        } catch (_) { return null; }
+      }
+      if (this._cdAudio && this._cdAudio.state === 'suspended') {
+        this._cdAudio.resume().catch(() => {});
+      }
+      return this._cdAudio;
+    },
+    _cdPrimeAudio() { this._cdCtx(); },
+
+    // Generic tone player. duration in seconds, volume 0..1.
+    _cdPlayTone(freq, duration, volume, type = 'sine') {
+      const ctx = this._cdCtx();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, now);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, volume), now + 0.008);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + Math.max(0.02, duration));
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + duration + 0.02);
+    },
+
+    // Soft metronome click for seconds 10..4.
+    _cdTick() { this._cdPlayTone(1200, 0.04, 0.10, 'sine'); },
+
+    // Warm chime for 3 / 2 / 1.
+    _cdChime() {
+      this._cdPlayTone(659.25, 0.22, 0.18, 'sine'); // E5
+      this._cdPlayTone(523.25, 0.22, 0.10, 'sine'); // C5 (subtle harmonic)
+    },
+
+    // Soft bell chord at 0 when the after-timer message arrives.
+    _cdBell() {
+      this._cdPlayTone(523.25, 0.9, 0.16, 'sine');  // C5
+      this._cdPlayTone(659.25, 0.9, 0.12, 'sine');  // E5
+      this._cdPlayTone(783.99, 0.9, 0.09, 'sine');  // G5
     },
 
     _formatTime(sec) {
@@ -5996,11 +6064,19 @@ Second line here
           stage.classList.toggle('critical', inCritical);
 
           if (totalSec !== lastSec) {
+            const prevSec = lastSec;
             lastSec = totalSec;
             if (inFinal) {
               timeEl.classList.remove('beat');
               void timeEl.offsetWidth;
               timeEl.classList.add('beat');
+            }
+            // Sound cue — tick at 10..4, warm chime at 3/2/1. Skip the
+            // very first settle call (prevSec === -1) so we don't fire
+            // mid-second when the slide first mounts.
+            if (slide.sound && prevSec !== -1 && totalSec > 0 && totalSec < prevSec) {
+              if (totalSec >= 4 && totalSec <= 10)   this._cdTick();
+              else if (totalSec >= 1 && totalSec <= 3) this._cdChime();
             }
           }
 
@@ -6009,6 +6085,7 @@ Second line here
             stage.__cdInterval = null;
             stage.classList.remove('final', 'critical');
             timeEl.classList.remove('beat');
+            if (slide.sound) this._cdBell();
             // Swap the monitor into the post-timer message, matching
             // what the projector window shows — including the
             // typewriter effect.
