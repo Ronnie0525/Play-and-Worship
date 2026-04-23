@@ -1,43 +1,49 @@
 /* ============================================================
-   sw.js — Play & Worship service worker.
+   sw.js — Play & Worship service worker (site-wide).
+
+   Placed at the repo root so its default scope is "/", covering both
+   the marketing landing page and the /app/ operator console. That way
+   the Install prompt can fire on either page.
 
    Strategy:
    - Precache the shell on install so the app can boot offline.
-   - Navigation requests (the .html documents) use network-first with
-     cache fallback — so page updates reach users as soon as they
-     have a connection, but the app still opens when offline.
-   - Static assets (JS/CSS/SVG/fonts) use cache-first with a silent
-     background revalidate — fast offline startup, fresh on next load.
-   - Bible API + Firestore + other XHR/fetches are never cached.
+   - Navigation requests use network-first with cache fallback so page
+     updates propagate on next reload but offline still works.
+   - Static assets (JS/CSS/SVG/PNG) use cache-first with background
+     revalidate for fast offline startup, fresh on next load.
+   - Third-party XHR / fetches (Bible API, Firestore, etc.) are never
+     cached — they fall through to the network.
 
-   Bump CACHE_VERSION to invalidate the old cache on a breaking change.
+   Bump CACHE_VERSION to invalidate on a breaking change.
    ============================================================ */
 
-const CACHE_VERSION = 'paw-v2';
+const CACHE_VERSION = 'paw-v3';
 const SHELL = [
   './',
   './index.html',
-  './projector.html',
   './manifest.webmanifest',
-  './css/app.css',
-  './css/projector.css',
-  './js/app.js',
-  './js/bible.js',
-  './js/mediaStore.js',
-  './js/pdf.js',
-  './js/pptx.js',
-  './js/projector.js',
-  './js/store.js',
-  './js/video.js',
-  '../assets/logo.svg',
-  '../assets/logo-mark-gold.svg',
-  '../assets/logo-mark-white.svg',
-  '../assets/logo-mark-dark.svg',
-  '../assets/icon-180.png',
-  '../assets/icon-192.png',
-  '../assets/icon-512.png',
-  '../assets/icon-mask-192.png',
-  '../assets/icon-mask-512.png',
+  './app/',
+  './app/index.html',
+  './app/projector.html',
+  './app/css/app.css',
+  './app/css/projector.css',
+  './app/js/app.js',
+  './app/js/bible.js',
+  './app/js/mediaStore.js',
+  './app/js/pdf.js',
+  './app/js/pptx.js',
+  './app/js/projector.js',
+  './app/js/store.js',
+  './app/js/video.js',
+  './assets/logo.svg',
+  './assets/logo-mark-gold.svg',
+  './assets/logo-mark-white.svg',
+  './assets/logo-mark-dark.svg',
+  './assets/icon-180.png',
+  './assets/icon-192.png',
+  './assets/icon-512.png',
+  './assets/icon-mask-192.png',
+  './assets/icon-mask-512.png',
 ];
 
 self.addEventListener('install', (event) => {
@@ -58,7 +64,6 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Only handle GETs from our own origin + a short list of trusted CDNs we use.
 const CDN_ALLOW = [
   'https://fonts.googleapis.com',
   'https://fonts.gstatic.com',
