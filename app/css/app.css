@@ -6489,50 +6489,33 @@ body.no-loader .login-gate { display: none; }
 }
 
 /* Monitor music stage — compact Now Playing preview for the operator
-   side. Matches the projector look but sized for the small monitors. */
+   side. Matches the projector look: black palette + full logo badge. */
 .monitor-stage.music {
-  background:
-    radial-gradient(ellipse at 50% 120%, rgba(200, 157, 74, 0.22), transparent 55%),
-    radial-gradient(ellipse at 50% -10%, rgba(46, 115, 109, 0.20), transparent 55%),
-    linear-gradient(180deg, #05070e 0%, #0a0f1a 100%);
+  background: linear-gradient(180deg, #000 0%, #060606 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 10px;
   padding: 14px;
-  color: #f5ead0;
+  color: #ffffff;
   overflow: hidden;
 }
 .monitor-stage.music .mon-music-disc {
-  width: 48px; height: 48px;
+  width: 56px; height: 56px;
   border-radius: 50%;
-  background: radial-gradient(circle at 40% 35%, #E3B96E 0%, #C89D4A 55%, #8e6b2b 100%);
-  box-shadow:
-    0 0 0 3px rgba(200, 157, 74, 0.18),
-    0 6px 18px rgba(0, 0, 0, 0.55),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.14);
-  animation: monMusicSpin 8s linear infinite;
-  position: relative;
-}
-.monitor-stage.music .mon-music-disc::after {
-  content: '';
-  position: absolute;
-  inset: 22%;
-  border-radius: 50%;
-  border: 1px dashed rgba(255, 255, 255, 0.22);
-}
-.monitor-stage.music .mon-music-disc {
   display: grid;
   place-items: center;
+  animation: monMusicSpin 12s linear infinite;
+  position: relative;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.85));
 }
 .monitor-stage.music .mon-music-disc-logo {
   position: relative;
-  width: 58%;
-  height: 58%;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
   z-index: 1;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
 }
 .monitor-stage.music.paused .mon-music-disc { animation-play-state: paused; }
 @keyframes monMusicSpin { to { transform: rotate(360deg); } }
@@ -6546,7 +6529,7 @@ body.no-loader .login-gate { display: none; }
 }
 .monitor-stage.music .mon-music-title {
   font: 600 13px/1.2 var(--serif, 'Source Serif 4', Georgia, serif);
-  color: #f5ead0;
+  color: #ffffff;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
