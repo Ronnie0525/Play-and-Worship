@@ -2611,17 +2611,6 @@
                 </div>
               </div>
             </div>
-            <div class="chapter-combo verse-combo" id="bible-verse-combo">
-              <button type="button" class="book-combo-button chapter-combo-button" id="bible-verse-btn" aria-haspopup="listbox" aria-expanded="false" title="Verse">
-                <span class="book-combo-label" id="bible-verse-label">${curVerse || '—'}</span>
-                <span class="book-combo-chev">▾</span>
-              </button>
-              <div class="book-combo-menu chapter-combo-menu hidden" id="bible-verse-menu">
-                <div class="chapter-combo-grid" id="bible-verse-list" role="listbox">
-                  ${verseGridItems.join('') || '<div class="verse-combo-empty">Loading chapter…</div>'}
-                </div>
-              </div>
-            </div>
             <div class="chapter-combo" id="bible-chapter-combo">
               <button type="button" class="book-combo-button chapter-combo-button" id="bible-chapter-btn" aria-haspopup="listbox" aria-expanded="false" title="Chapter">
                 <span class="book-combo-label" id="bible-chapter-label">${curChapter}</span>
@@ -2630,6 +2619,17 @@
               <div class="book-combo-menu chapter-combo-menu hidden" id="bible-chapter-menu">
                 <div class="chapter-combo-grid" id="bible-chapter-list" role="listbox">
                   ${chapterGridItems.join('')}
+                </div>
+              </div>
+            </div>
+            <div class="chapter-combo verse-combo" id="bible-verse-combo">
+              <button type="button" class="book-combo-button chapter-combo-button" id="bible-verse-btn" aria-haspopup="listbox" aria-expanded="false" title="Verse">
+                <span class="book-combo-label" id="bible-verse-label">${curVerse || '—'}</span>
+                <span class="book-combo-chev">▾</span>
+              </button>
+              <div class="book-combo-menu chapter-combo-menu hidden" id="bible-verse-menu">
+                <div class="chapter-combo-grid" id="bible-verse-list" role="listbox">
+                  ${verseGridItems.join('') || '<div class="verse-combo-empty">Loading chapter…</div>'}
                 </div>
               </div>
             </div>
