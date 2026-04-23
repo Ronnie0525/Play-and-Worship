@@ -2541,9 +2541,6 @@
       host.innerHTML = `
         <div class="music-float-controls">
           <button class="music-float-btn" data-music-prev title="Previous track">${ICONS.prev}</button>
-          <button class="music-float-btn" data-music-rewind title="Rewind 10 seconds" aria-label="Rewind 10s">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><text x="12" y="15" font-size="7" font-family="ui-monospace,monospace" font-weight="700" text-anchor="middle" fill="currentColor" stroke="none">10</text></svg>
-          </button>
           <button class="music-float-toggle" data-music-toggle title="${paused ? 'Play' : 'Pause'}">${paused ? ICONS.play : ICONS.pause}</button>
           <button class="music-float-btn" data-music-next title="Next track">${ICONS.next}</button>
         </div>
@@ -2569,10 +2566,6 @@
       });
       host.querySelector('[data-music-prev]').addEventListener('click', () => this._playAdjacentMusic(-1));
       host.querySelector('[data-music-next]').addEventListener('click', () => this._playAdjacentMusic(+1));
-      host.querySelector('[data-music-rewind]').addEventListener('click', () => {
-        if (!this._musicAudioEl) return;
-        this._musicAudioEl.currentTime = Math.max(0, this._musicAudioEl.currentTime - 10);
-      });
       host.querySelector('[data-music-stop]').addEventListener('click', () => this._stopMusic());
 
       const seek   = host.querySelector('#music-float-seek');
@@ -2947,9 +2940,6 @@
       const paused = s.paused;
       host.innerHTML = `
         <div class="music-float-controls">
-          <button class="music-float-btn" data-video-rewind title="Rewind 10 seconds" aria-label="Rewind 10s">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><text x="12" y="15" font-size="7" font-family="ui-monospace,monospace" font-weight="700" text-anchor="middle" fill="currentColor" stroke="none">10</text></svg>
-          </button>
           <button class="music-float-toggle" data-video-toggle title="${paused ? 'Play' : 'Pause'}">${paused ? ICONS.play : ICONS.pause}</button>
           <button class="music-float-btn" data-video-mute title="${s.muted ? 'Unmute' : 'Mute'}">${s.muted ? '🔇' : '🔊'}</button>
         </div>
@@ -2966,9 +2956,6 @@
 
       host.querySelector('[data-video-toggle]').addEventListener('click', () => {
         Projector.sendVideoCmd(this.state.liveVideo && this.state.liveVideo.paused ? 'play' : 'pause');
-      });
-      host.querySelector('[data-video-rewind]').addEventListener('click', () => {
-        Projector.sendVideoCmd('rewind', 10);
       });
       host.querySelector('[data-video-mute]').addEventListener('click', () => {
         Projector.sendVideoCmd('mute', !(this.state.liveVideo && this.state.liveVideo.muted));
