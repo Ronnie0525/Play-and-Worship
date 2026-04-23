@@ -13,7 +13,7 @@
    Bump CACHE_VERSION to invalidate the old cache on a breaking change.
    ============================================================ */
 
-const CACHE_VERSION = 'paw-v1';
+const CACHE_VERSION = 'paw-v2';
 const SHELL = [
   './',
   './index.html',
@@ -33,6 +33,11 @@ const SHELL = [
   '../assets/logo-mark-gold.svg',
   '../assets/logo-mark-white.svg',
   '../assets/logo-mark-dark.svg',
+  '../assets/icon-180.png',
+  '../assets/icon-192.png',
+  '../assets/icon-512.png',
+  '../assets/icon-mask-192.png',
+  '../assets/icon-mask-512.png',
 ];
 
 self.addEventListener('install', (event) => {

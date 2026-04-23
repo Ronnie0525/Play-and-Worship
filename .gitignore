@@ -18,3 +18,8 @@ yarn-debug.log*
 # Local env
 .env
 .env.local
+
+# Node (for tooling only)
+node_modules/
+package-lock.json
+package.json
