@@ -5676,6 +5676,85 @@ body.no-loader .login-gate { display: none; }
   }
 }
 
+/* Monitor music stage — compact Now Playing preview for the operator
+   side. Matches the projector look but sized for the small monitors. */
+.monitor-stage.music {
+  background:
+    radial-gradient(ellipse at 50% 120%, rgba(200, 157, 74, 0.22), transparent 55%),
+    radial-gradient(ellipse at 50% -10%, rgba(46, 115, 109, 0.20), transparent 55%),
+    linear-gradient(180deg, #05070e 0%, #0a0f1a 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px;
+  color: #f5ead0;
+  overflow: hidden;
+}
+.monitor-stage.music .mon-music-disc {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #c89d4a 0%, #8e6b2b 55%, #3a2a0f 100%);
+  box-shadow:
+    0 0 0 3px rgba(200, 157, 74, 0.18),
+    0 6px 18px rgba(0, 0, 0, 0.55),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  animation: monMusicSpin 8s linear infinite;
+  position: relative;
+}
+.monitor-stage.music .mon-music-disc::after {
+  content: '';
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: 22%; height: 22%;
+  border-radius: 50%;
+  background: #0a0f1a;
+}
+.monitor-stage.music.paused .mon-music-disc { animation-play-state: paused; }
+@keyframes monMusicSpin { to { transform: rotate(360deg); } }
+.monitor-stage.music .mon-music-text { text-align: center; line-height: 1.15; }
+.monitor-stage.music .mon-music-kicker {
+  font: 600 9px/1 var(--mono, ui-monospace, monospace);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(200, 157, 74, 0.75);
+  margin-bottom: 4px;
+}
+.monitor-stage.music .mon-music-title {
+  font: 600 13px/1.2 var(--serif, 'Source Serif 4', Georgia, serif);
+  color: #f5ead0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.monitor-stage.music .mon-music-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 16px;
+  margin-top: 2px;
+}
+.monitor-stage.music .mon-music-bar {
+  display: block;
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(180deg, #E3B96E, #C89D4A);
+  border-radius: 2px;
+  transform-origin: bottom center;
+  animation: monMusicBar 1.1s ease-in-out infinite;
+  animation-delay: calc(var(--i) * -0.14s);
+}
+.monitor-stage.music.paused .mon-music-bar { animation-play-state: paused; transform: scaleY(0.3); }
+@keyframes monMusicBar {
+  0%, 100% { transform: scaleY(0.25); }
+  25%      { transform: scaleY(0.75); }
+  50%      { transform: scaleY(1); }
+  75%      { transform: scaleY(0.55); }
+}
+
 /* Draft indicator in the song-editor header */
 .center-title .draft-tag {
   display: inline-block;

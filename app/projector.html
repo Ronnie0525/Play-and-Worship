@@ -281,6 +281,7 @@
 
       if (slide.kind === 'music') {
         stage.classList.add('music');
+        if (slide.paused) stage.classList.add('paused');
         const trackName = (slide.name || 'Now Playing').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
         let bars = '';
         for (let i = 0; i < 9; i++) {
@@ -292,7 +293,7 @@
             <div class="music-disc-ring"></div>
             <svg viewBox="0 0 24 24" class="music-disc-ico"><path d="M9 18V5l12-2v13" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6" cy="18" r="3" fill="currentColor"/><circle cx="18" cy="16" r="3" fill="currentColor"/></svg>
           </div>
-          <div class="music-kicker">Now Playing</div>
+          <div class="music-kicker">${slide.paused ? 'Paused' : 'Now Playing'}</div>
           <div class="music-title">${trackName}</div>
           <div class="music-bars" aria-hidden="true">${bars}</div>
         `;

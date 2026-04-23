@@ -155,6 +155,8 @@
       projectorConnected: false,
       sessionMotion: 'none',        // operator-level bg motion for text slides (songs/scripture)
       liveDeck: null,               // out-of-band paged deck (e.g. multi-slide birthday) { kind, label, slides[], idx }
+      musicSlide: null,             // active music-library playback (takes over the live stage like countdown)
+      musicSearch: '',
     },
 
     // -------- init --------
@@ -2445,6 +2447,16 @@
           await this._toggleMusicPlayback(id, btn);
         });
       });
+      // Double-click anywhere on the row toggles playback too (familiar
+      // behavior from desktop music players). The inline play button
+      // stops propagation so single-clicking it doesn't also fire this.
+      $$('.lib-music-row', list).forEach(row => {
+        row.addEventListener('dblclick', async () => {
+          const id = row.dataset.musicId;
+          const btn = row.querySelector('[data-music-play]');
+          await this._toggleMusicPlayback(id, btn);
+        });
+      });
       $$('[data-del-music]', list).forEach(btn => {
         btn.addEventListener('click', async (e) => {
           e.stopPropagation();
@@ -2470,20 +2482,24 @@
       if (this._musicAudioEl && this._musicAudioId === id && !this._musicAudioEl.paused) {
         this._musicAudioEl.pause();
         if (btn) btn.innerHTML = ICONS.play;
-        if (Projector.isOpen()) Projector.clear();
+        // Leave state.musicSlide set so the Now Playing screen stays up,
+        // just switch its playing flag so the visualizer can idle.
+        if (this.state.musicSlide) this.state.musicSlide = { ...this.state.musicSlide, paused: true };
+        this._pushLive();
+        this._renderMonitors();
         return;
       }
       // If the same track is paused — resume.
       if (this._musicAudioEl && this._musicAudioId === id && this._musicAudioEl.paused) {
         try { await this._musicAudioEl.play(); } catch (_) {}
         if (btn) btn.innerHTML = ICONS.pause;
-        if (Projector.isOpen() && this._musicTrackName) {
-          Projector.showSlide({ id: `music_${id}`, kind: 'music', name: this._musicTrackName });
-        }
+        if (this.state.musicSlide) this.state.musicSlide = { ...this.state.musicSlide, paused: false };
+        this._pushLive();
+        this._renderMonitors();
         return;
       }
       // Otherwise swap to the new track.
-      this._stopMusic();
+      this._stopMusic({ keepStage: true });
       let tracks = [];
       try { tracks = await MediaStore.getAudio(); } catch (_) {}
       const track = tracks.find(t => t.id === id);
@@ -2502,12 +2518,14 @@
       try { await audio.play(); } catch (_) {}
       rowBtns.forEach(b => { b.innerHTML = ICONS.play; });
       if (btn) btn.innerHTML = ICONS.pause;
-      if (Projector.isOpen()) {
-        Projector.showSlide({ id: `music_${id}`, kind: 'music', name: track.name || 'Music' });
-      }
+      // Elevate the Now Playing stage so it shows on both the operator's
+      // Live Output monitor and the projector window.
+      this.state.musicSlide = { id: `music_${id}`, kind: 'music', name: track.name || 'Music', paused: false };
+      this._pushLive();
+      this._renderMonitors();
     },
 
-    _stopMusic() {
+    _stopMusic(opts = {}) {
       if (this._musicAudioEl) {
         try { this._musicAudioEl.pause(); } catch (_) {}
         try { this._musicAudioEl.src = ''; } catch (_) {}
@@ -2519,8 +2537,13 @@
       this._musicAudioId = null;
       this._musicAudioUrl = null;
       this._musicTrackName = null;
-      // Clear the projector if it was showing the music stage.
-      if (Projector.isOpen()) Projector.clear();
+      if (!opts.keepStage) {
+        this.state.musicSlide = null;
+        // _pushLive will recompute the live slide — so if there's a schedule
+        // item still live, it quietly comes back. Otherwise the stage clears.
+        this._pushLive();
+        this._renderMonitors();
+      }
     },
 
     _formatBytes(n) {
@@ -5018,6 +5041,8 @@ Second line here
     },
 
     _getLiveSlide() {
+      // Music library playback takes over the stage just like countdown does.
+      if (this.state.musicSlide) return this.state.musicSlide;
       // Out-of-band paged deck (multi-slide birthday, etc.) takes top priority.
       const d = this.state.liveDeck;
       if (d && d.slides && d.slides.length) {
@@ -5351,6 +5376,22 @@ Second line here
               `).join('')}
             </div>
           </div>
+        `;
+        return;
+      }
+
+      if (slide.kind === 'music') {
+        stage.classList.add('music');
+        if (slide.paused) stage.classList.add('paused');
+        let bars = '';
+        for (let i = 0; i < 9; i++) bars += `<span class="mon-music-bar" style="--i:${i}"></span>`;
+        stage.innerHTML = `
+          <div class="mon-music-disc"></div>
+          <div class="mon-music-text">
+            <div class="mon-music-kicker">${slide.paused ? 'Paused' : 'Now Playing'}</div>
+            <div class="mon-music-title">${escapeHtml(slide.name || 'Music')}</div>
+          </div>
+          <div class="mon-music-bars">${bars}</div>
         `;
         return;
       }

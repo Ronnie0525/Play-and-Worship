@@ -1089,6 +1089,14 @@ html, body {
   75%      { transform: scaleY(0.55); opacity: 0.9; }
 }
 
+.stage.music.paused .music-disc,
+.stage.music.paused .music-glow,
+.stage.music.paused .music-bar {
+  animation-play-state: paused;
+}
+.stage.music.paused .music-bar { transform: scaleY(0.3); }
+.stage.music.paused .music-kicker { color: rgba(200, 157, 74, 0.5); }
+
 @media (prefers-reduced-motion: reduce) {
   .stage.music .music-disc,
   .stage.music .music-glow,
