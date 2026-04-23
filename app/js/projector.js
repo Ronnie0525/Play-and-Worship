@@ -83,14 +83,29 @@ const Projector = (() => {
   // Projector window posts {type:'ready'} on load — resend state.
   // Listen on both transports so we respond regardless of which one the
   // projector managed to reach us through.
-  const onReady = (d) => { if (d && d.type === 'ready') send(); };
-  channel.addEventListener('message', (e) => onReady(e.data));
+  const videoStateSubs = new Set();
+  const onMessage = (d) => {
+    if (!d) return;
+    if (d.type === 'ready') { send(); return; }
+    if (d.type === 'video-state') {
+      videoStateSubs.forEach(fn => { try { fn(d); } catch (_) {} });
+    }
+  };
+  channel.addEventListener('message', (e) => onMessage(e.data));
   window.addEventListener('message', (e) => {
     if (win && e.source !== win) return;
-    onReady(e.data);
+    onMessage(e.data);
   });
+
+  const onVideoState = (fn) => { videoStateSubs.add(fn); return () => videoStateSubs.delete(fn); };
+
+  const sendVideoCmd = (action, value) => {
+    const msg = { type: 'video-cmd', action, value };
+    try { channel.postMessage(msg); } catch {}
+    if (win && !win.closed) { try { win.postMessage(msg, '*'); } catch {} }
+  };
 
   window.addEventListener('beforeunload', () => { try { channel.close(); } catch {} });
 
-  return { open, isOpen, showSlide, clear, toggleBlackout, setBlackout, getState };
+  return { open, isOpen, showSlide, clear, toggleBlackout, setBlackout, getState, onVideoState, sendVideoCmd };
 })();

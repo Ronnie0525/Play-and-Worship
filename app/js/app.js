@@ -159,6 +159,7 @@
       musicSearch: '',
       musicVolume: 0.85,            // 0..1 — applied to every Audio element we create
       musicOverride: false,         // after 15s of a non-music slide while music plays, music viz takes the stage
+      liveVideo: null,              // {id, currentTime, duration, paused, ended, muted} — mirrored from projector
     },
 
     // -------- init --------
@@ -195,6 +196,11 @@
       // on a cold reload). Schedule items that reference videos by blobId
       // will resolve once the corresponding clip is re-added to state.
       this._hydrateMedia();
+      // Subscribe to projector video state so the floating video bar
+      // can show live time / pause state / seek position.
+      if (typeof Projector !== 'undefined' && Projector.onVideoState) {
+        Projector.onVideoState((s) => this._onVideoState(s));
+      }
 
       // Demo mode: when the landing page embeds the app as ?demo=1 it wants
       // the Preview + Live monitors populated with sample content. Writes
@@ -2530,13 +2536,25 @@
       const vol = Math.round((this.state.musicVolume ?? 0.85) * 100);
       const volIcon = vol === 0 ? '🔇' : (vol < 33 ? '🔈' : (vol < 66 ? '🔉' : '🔊'));
       host.classList.remove('hidden');
+      const dur = this._musicAudioEl.duration || 0;
+      const cur = this._musicAudioEl.currentTime || 0;
       host.innerHTML = `
         <div class="music-float-controls">
           <button class="music-float-btn" data-music-prev title="Previous track">${ICONS.prev}</button>
+          <button class="music-float-btn" data-music-rewind title="Rewind 10 seconds" aria-label="Rewind 10s">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><text x="12" y="15" font-size="7" font-family="ui-monospace,monospace" font-weight="700" text-anchor="middle" fill="currentColor" stroke="none">10</text></svg>
+          </button>
           <button class="music-float-toggle" data-music-toggle title="${paused ? 'Play' : 'Pause'}">${paused ? ICONS.play : ICONS.pause}</button>
           <button class="music-float-btn" data-music-next title="Next track">${ICONS.next}</button>
         </div>
-        <div class="music-float-name" title="${escapeAttr(this._musicTrackName)}">${escapeHtml(this._musicTrackName)}</div>
+        <div class="music-float-main">
+          <div class="music-float-name" title="${escapeAttr(this._musicTrackName)}">${escapeHtml(this._musicTrackName)}</div>
+          <div class="music-float-progress">
+            <span class="music-float-time" data-time-cur>${this._formatTime(cur)}</span>
+            <input type="range" class="music-float-seek" id="music-float-seek" min="0" max="${Math.max(0, dur || 0)}" step="0.1" value="${cur}" ${dur ? '' : 'disabled'}>
+            <span class="music-float-time" data-time-total>${this._formatTime(dur)}</span>
+          </div>
+        </div>
         <div class="music-float-vol">
           <span class="music-float-vol-ico" data-vol-ico>${volIcon}</span>
           <input type="range" class="music-float-vol-range" id="music-float-vol" min="0" max="100" step="1" value="${vol}">
@@ -2551,7 +2569,45 @@
       });
       host.querySelector('[data-music-prev]').addEventListener('click', () => this._playAdjacentMusic(-1));
       host.querySelector('[data-music-next]').addEventListener('click', () => this._playAdjacentMusic(+1));
+      host.querySelector('[data-music-rewind]').addEventListener('click', () => {
+        if (!this._musicAudioEl) return;
+        this._musicAudioEl.currentTime = Math.max(0, this._musicAudioEl.currentTime - 10);
+      });
       host.querySelector('[data-music-stop]').addEventListener('click', () => this._stopMusic());
+
+      const seek   = host.querySelector('#music-float-seek');
+      const curEl  = host.querySelector('[data-time-cur]');
+      const totEl  = host.querySelector('[data-time-total]');
+      let seeking = false;
+      seek.addEventListener('pointerdown', () => { seeking = true; });
+      seek.addEventListener('pointerup',   () => { seeking = false; });
+      seek.addEventListener('input', (e) => {
+        if (!this._musicAudioEl) return;
+        const v = Number(e.target.value) || 0;
+        this._musicAudioEl.currentTime = v;
+        if (curEl) curEl.textContent = this._formatTime(v);
+      });
+      // Subscribe to timeupdate so the bar + time labels tick live.
+      if (!this._musicAudioEl.__seekWired) {
+        this._musicAudioEl.__seekWired = true;
+        this._musicAudioEl.addEventListener('timeupdate', () => {
+          const host2 = document.getElementById('music-float');
+          if (!host2 || host2.classList.contains('hidden')) return;
+          const s = host2.querySelector('#music-float-seek');
+          const c = host2.querySelector('[data-time-cur]');
+          if (seeking) return;
+          if (s) s.value = String(this._musicAudioEl.currentTime || 0);
+          if (c) c.textContent = this._formatTime(this._musicAudioEl.currentTime || 0);
+        });
+        this._musicAudioEl.addEventListener('loadedmetadata', () => {
+          const host2 = document.getElementById('music-float');
+          if (!host2) return;
+          const s = host2.querySelector('#music-float-seek');
+          const t = host2.querySelector('[data-time-total]');
+          if (s) { s.max = String(this._musicAudioEl.duration || 0); s.disabled = !this._musicAudioEl.duration; }
+          if (t) t.textContent = this._formatTime(this._musicAudioEl.duration || 0);
+        });
+      }
 
       const range = host.querySelector('#music-float-vol');
       const numEl = host.querySelector('[data-vol-num]');
@@ -2672,12 +2728,16 @@
         <div class="lib-row lib-music-row" data-music-id="${escapeAttr(t.id)}">
           <button class="lib-music-play" data-music-play="${escapeAttr(t.id)}" title="Play">${ICONS.play}</button>
           <div class="lib-row-body">
-            <div class="lib-row-title">${escapeHtml(t.name || 'Untitled')}</div>
+            <div class="lib-row-title">
+              <span>${escapeHtml(t.name || 'Untitled')}</span>
+              <span class="lib-music-eq" aria-hidden="true"><i></i><i></i><i></i></span>
+            </div>
             <div class="lib-row-sub">${this._formatBytes(t.size)}</div>
           </div>
           <button class="lib-row-del" data-del-music="${escapeAttr(t.id)}" title="Delete">${ICONS.trash}</button>
         </div>
       `).join('');
+      this._syncMusicRowPlaying(list);
 
       // Re-hydrate inline SVGs in the rendered buttons (ICONS are inlined but
       // `data-icon="..."` placeholders elsewhere need hydration).
@@ -2719,6 +2779,19 @@
       });
     },
 
+    // Toggle the .playing class on whichever row matches the currently
+    // sounding track. Leaves other rows untouched so the equalizer
+    // animation starts/stops only where it should. Safe to call anytime.
+    _syncMusicRowPlaying(scope) {
+      const host = scope || document.getElementById('lib-music-list');
+      if (!host) return;
+      const playingId = (this._musicAudioEl && !this._musicAudioEl.paused)
+        ? this._musicAudioId : null;
+      $$('.lib-music-row', host).forEach(row => {
+        row.classList.toggle('playing', row.dataset.musicId === playingId);
+      });
+    },
+
     // True when the Now Playing music stage is what the projector would
     // render right now (nothing higher priority is occupying the stage,
     // or the 15-second override is active so music is forcing the stage).
@@ -2749,6 +2822,7 @@
         if (this._musicStageIsLive()) this._pushLive();
         this._renderMonitors();
         this._renderMusicPlayer();
+        this._syncMusicRowPlaying();
         return;
       }
       // If the same track is paused — resume.
@@ -2762,6 +2836,7 @@
         else this._scheduleMusicOverride();
         this._renderMonitors();
         this._renderMusicPlayer();
+        this._syncMusicRowPlaying();
         return;
       }
       // Otherwise swap to the new track.
@@ -2799,6 +2874,7 @@
       else this._scheduleMusicOverride();
       this._renderMonitors();
       this._renderMusicPlayer();
+      this._syncMusicRowPlaying();
     },
 
     _stopMusic(opts = {}) {
@@ -2825,7 +2901,157 @@
         // Reset any row play buttons back to the play icon.
         $$('.lib-music-play').forEach(b => { b.innerHTML = ICONS.play; });
         this._renderMusicPlayer();
+        this._syncMusicRowPlaying();
       }
+    },
+
+    // Receives periodic {type:'video-state'} beats from the projector
+    // whenever a video is loaded/playing there. Updates state.liveVideo
+    // and re-renders the floating video bar.
+    _onVideoState(s) {
+      this.state.liveVideo = {
+        id: s.videoId,
+        currentTime: s.currentTime || 0,
+        duration: s.duration || 0,
+        paused: !!s.paused,
+        ended: !!s.ended,
+        muted: !!s.muted,
+      };
+      this._renderVideoPlayer();
+    },
+
+    // Clear the floating video bar (called when projector's current slide
+    // is no longer a video, or we lose the projector).
+    _clearLiveVideo() {
+      this.state.liveVideo = null;
+      this._renderVideoPlayer();
+    },
+
+    _renderVideoPlayer() {
+      const host = document.getElementById('video-float');
+      if (!host) return;
+      this._wireVideoFloatDrag(host);
+      const live = this._getLiveSlide();
+      const isVideoLive = live && live.kind === 'video';
+      const s = this.state.liveVideo;
+      if (!isVideoLive || !s) {
+        host.innerHTML = '';
+        host.classList.add('hidden');
+        return;
+      }
+      this._restoreVideoFloatPos(host);
+      host.classList.remove('hidden');
+      const dur = s.duration || 0;
+      const cur = s.currentTime || 0;
+      const title = (live.label || 'Video');
+      const paused = s.paused;
+      host.innerHTML = `
+        <div class="music-float-controls">
+          <button class="music-float-btn" data-video-rewind title="Rewind 10 seconds" aria-label="Rewind 10s">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><text x="12" y="15" font-size="7" font-family="ui-monospace,monospace" font-weight="700" text-anchor="middle" fill="currentColor" stroke="none">10</text></svg>
+          </button>
+          <button class="music-float-toggle" data-video-toggle title="${paused ? 'Play' : 'Pause'}">${paused ? ICONS.play : ICONS.pause}</button>
+          <button class="music-float-btn" data-video-mute title="${s.muted ? 'Unmute' : 'Mute'}">${s.muted ? '🔇' : '🔊'}</button>
+        </div>
+        <div class="music-float-main">
+          <div class="music-float-name"><span class="video-float-badge">VIDEO</span> ${escapeHtml(title)}</div>
+          <div class="music-float-progress">
+            <span class="music-float-time" data-vtime-cur>${this._formatTime(cur)}</span>
+            <input type="range" class="music-float-seek" id="video-float-seek" min="0" max="${Math.max(0.1, dur)}" step="0.1" value="${cur}" ${dur > 0 ? '' : 'disabled'}>
+            <span class="music-float-time" data-vtime-total>${this._formatTime(dur)}</span>
+          </div>
+        </div>
+        <button class="music-float-stop" data-video-stop title="Stop">${ICONS.x}</button>
+      `;
+
+      host.querySelector('[data-video-toggle]').addEventListener('click', () => {
+        Projector.sendVideoCmd(this.state.liveVideo && this.state.liveVideo.paused ? 'play' : 'pause');
+      });
+      host.querySelector('[data-video-rewind]').addEventListener('click', () => {
+        Projector.sendVideoCmd('rewind', 10);
+      });
+      host.querySelector('[data-video-mute]').addEventListener('click', () => {
+        Projector.sendVideoCmd('mute', !(this.state.liveVideo && this.state.liveVideo.muted));
+      });
+      host.querySelector('[data-video-stop]').addEventListener('click', () => this.clearLive());
+
+      const seek = host.querySelector('#video-float-seek');
+      let seeking = false;
+      seek.addEventListener('pointerdown', () => { seeking = true; });
+      seek.addEventListener('pointerup', (e) => {
+        seeking = false;
+        const v = Number(e.target.value) || 0;
+        Projector.sendVideoCmd('seek', v);
+      });
+      seek.addEventListener('input', (e) => {
+        const v = Number(e.target.value) || 0;
+        const c = host.querySelector('[data-vtime-cur]');
+        if (c) c.textContent = this._formatTime(v);
+        if (seeking) return;
+        Projector.sendVideoCmd('seek', v);
+      });
+    },
+
+    _wireVideoFloatDrag(host) {
+      if (host.__dragWired) return;
+      host.__dragWired = true;
+      host.addEventListener('pointerdown', (e) => {
+        if (e.target.closest('button, input, a, [role="slider"]')) return;
+        if (e.button !== undefined && e.button !== 0) return;
+        e.preventDefault();
+        const rect = host.getBoundingClientRect();
+        const offX = e.clientX - rect.left;
+        const offY = e.clientY - rect.top;
+        host.classList.add('dragging');
+        try { host.setPointerCapture(e.pointerId); } catch (_) {}
+        const onMove = (ev) => {
+          const maxX = Math.max(0, window.innerWidth  - host.offsetWidth  - 4);
+          const maxY = Math.max(0, window.innerHeight - host.offsetHeight - 4);
+          const x = Math.max(4, Math.min(maxX, ev.clientX - offX));
+          const y = Math.max(4, Math.min(maxY, ev.clientY - offY));
+          host.style.left = x + 'px';
+          host.style.top  = y + 'px';
+          host.style.right = 'auto';
+          host.style.bottom = 'auto';
+        };
+        const onUp = (ev) => {
+          host.removeEventListener('pointermove', onMove);
+          host.removeEventListener('pointerup',   onUp);
+          host.removeEventListener('pointercancel', onUp);
+          host.classList.remove('dragging');
+          try { host.releasePointerCapture(ev.pointerId); } catch (_) {}
+          try {
+            localStorage.setItem('paw.videoFloatPos', JSON.stringify({
+              left: parseInt(host.style.left, 10),
+              top:  parseInt(host.style.top, 10),
+            }));
+          } catch (_) {}
+        };
+        host.addEventListener('pointermove',   onMove);
+        host.addEventListener('pointerup',     onUp);
+        host.addEventListener('pointercancel', onUp);
+      });
+    },
+    _restoreVideoFloatPos(host) {
+      let saved = null;
+      try { saved = JSON.parse(localStorage.getItem('paw.videoFloatPos') || 'null'); } catch (_) {}
+      if (!saved || typeof saved.left !== 'number' || typeof saved.top !== 'number') return;
+      const inView = saved.left >= 0 && saved.top >= 0
+        && saved.left <= window.innerWidth  - 120
+        && saved.top  <= window.innerHeight - 24;
+      if (!inView) return;
+      host.style.left = saved.left + 'px';
+      host.style.top  = saved.top  + 'px';
+      host.style.right = 'auto';
+      host.style.bottom = 'auto';
+    },
+
+    _formatTime(sec) {
+      if (!isFinite(sec) || sec < 0) return '0:00';
+      const s = Math.floor(sec);
+      const mm = Math.floor(s / 60);
+      const ss = s % 60;
+      return `${mm}:${String(ss).padStart(2, '0')}`;
     },
 
     _formatBytes(n) {
@@ -5586,6 +5812,13 @@ Second line here
       // buttons matches the current projector state so the operator can
       // tell at a glance what is on screen.
       this._refreshToolbarLiveState();
+
+      // Floating video controls — show only when a video is the live slide.
+      this._renderVideoPlayer();
+      // Drop the stale projector video state when we move off a video.
+      if (!(liveSlide && liveSlide.kind === 'video') && this.state.liveVideo) {
+        this.state.liveVideo = null;
+      }
     },
 
     // Pulse the toolbar button whose action is currently on the projector.

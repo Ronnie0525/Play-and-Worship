@@ -439,6 +439,27 @@
           v.style.background = '#000';
           if (slide.posterUrl) v.poster = slide.posterUrl;
           stage.appendChild(v);
+          // Broadcast state back to the operator so the floating video
+          // bar can show time / seek / pause in sync.
+          const emitState = () => {
+            try {
+              ch.postMessage({
+                type: 'video-state',
+                videoId: currentVideoId,
+                currentTime: v.currentTime || 0,
+                duration: v.duration || 0,
+                paused: v.paused,
+                ended: v.ended,
+                muted: v.muted,
+              });
+            } catch {}
+          };
+          v.addEventListener('loadedmetadata', emitState);
+          v.addEventListener('timeupdate', emitState);
+          v.addEventListener('pause', emitState);
+          v.addEventListener('play', emitState);
+          v.addEventListener('ended', emitState);
+          v.addEventListener('volumechange', emitState);
           // Try to play unmuted. If the browser blocks unmuted autoplay
           // (popup windows start without user activation), fall back to
           // muted playback and show a one-click prompt so the operator
@@ -503,7 +524,18 @@
   // once (otherwise we'd flicker through the fade-out each time).
   let lastSeq = -1;
   const handle = (d) => {
-    if (!d || d.type !== 'render') return;
+    if (!d) return;
+    if (d.type === 'video-cmd') {
+      const v = stage.querySelector('video');
+      if (!v) return;
+      if (d.action === 'play')  v.play().catch(() => {});
+      else if (d.action === 'pause') v.pause();
+      else if (d.action === 'seek')  v.currentTime = Math.max(0, Number(d.value) || 0);
+      else if (d.action === 'mute')  v.muted = !!d.value;
+      else if (d.action === 'rewind') v.currentTime = Math.max(0, (v.currentTime || 0) - (Number(d.value) || 10));
+      return;
+    }
+    if (d.type !== 'render') return;
     if (typeof d.seq === 'number') {
       if (d.seq <= lastSeq) return;
       lastSeq = d.seq;
