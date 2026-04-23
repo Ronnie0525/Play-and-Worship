@@ -158,6 +158,7 @@
       musicSlide: null,             // active music-library playback (takes over the live stage like countdown)
       musicSearch: '',
       musicVolume: 0.85,            // 0..1 — applied to every Audio element we create
+      musicOverride: false,         // after 15s of a non-music slide while music plays, music viz takes the stage
     },
 
     // -------- init --------
@@ -2533,10 +2534,12 @@
     },
 
     // True when the Now Playing music stage is what the projector would
-    // render right now (nothing higher priority is occupying the stage).
+    // render right now (nothing higher priority is occupying the stage,
+    // or the 15-second override is active so music is forcing the stage).
     // When false, music state changes only update audio + the mini-player;
     // they don't touch the projector so the operator's slide doesn't flash.
     _musicStageIsLive() {
+      if (this.state.musicOverride) return true;
       return !this.state.liveDeck
         && !this.state.countdownSlide
         && this.state.liveScheduleIdx < 0;
@@ -2555,6 +2558,8 @@
         // or the mini-player).
         const rb = document.querySelector(`[data-music-play="${id}"]`);
         if (rb) rb.innerHTML = ICONS.play;
+        // Stop the 15s override clock while paused — no takeover while audio is silent.
+        if (this._musicOverrideTimer) { clearTimeout(this._musicOverrideTimer); this._musicOverrideTimer = null; }
         if (this._musicStageIsLive()) this._pushLive();
         this._renderMonitors();
         this._renderMusicPlayer();
@@ -2568,6 +2573,7 @@
         const rb = document.querySelector(`[data-music-play="${id}"]`);
         if (rb) rb.innerHTML = ICONS.pause;
         if (this._musicStageIsLive()) this._pushLive();
+        else this._scheduleMusicOverride();
         this._renderMonitors();
         this._renderMusicPlayer();
         return;
@@ -2595,9 +2601,12 @@
       if (btn) btn.innerHTML = ICONS.pause;
       // Register the Now Playing slide. It becomes the projector stage
       // only when nothing higher priority (schedule, countdown, deck)
-      // is live — otherwise the audio plays behind the current slide.
+      // is live — otherwise the audio plays behind the current slide,
+      // and after 15s the override promotes music over the schedule.
       this.state.musicSlide = { id: `music_${id}`, kind: 'music', name: track.name || 'Music', paused: false };
+      this.state.musicOverride = false; // new track cancels any prior override
       if (this._musicStageIsLive()) this._pushLive();
+      else this._scheduleMusicOverride();
       this._renderMonitors();
       this._renderMusicPlayer();
     },
@@ -2620,6 +2629,7 @@
         // item / deck / countdown and needn't be touched.
         const wasLive = this._musicStageIsLive();
         this.state.musicSlide = null;
+        this._cancelMusicOverride();
         if (wasLive) this._pushLive();
         this._renderMonitors();
         // Reset any row play buttons back to the play icon.
@@ -5105,10 +5115,57 @@ Second line here
     },
 
     _pushLive() {
+      // If the underlying non-music slide state changed since the last push,
+      // clear any active music override so the new schedule slide gets to
+      // show. The 15-second timer then restarts from fresh below.
+      const sig = [
+        this.state.liveScheduleIdx,
+        this.state.currentSlideIdx,
+        this.state.countdownSlide ? this.state.countdownSlide.id : '',
+        this.state.liveDeck ? `${this.state.liveDeck.kind}:${this.state.liveDeck.idx}` : '',
+      ].join('|');
+      if (this._lastLiveSig !== sig) {
+        this._lastLiveSig = sig;
+        this.state.musicOverride = false;
+      }
+
       const slide = this._getLiveSlide();
-      if (!slide) { Projector.clear(); return; }
+      if (!slide) { Projector.clear(); this._scheduleMusicOverride(); return; }
       if (!Projector.isOpen()) toast('Projector is not open.', 'error');
       else Projector.showSlide(this._withSessionMotion(slide));
+      this._scheduleMusicOverride();
+    },
+
+    // Start (or restart) the 15-second clock that promotes the Now Playing
+    // music stage over a currently-visible schedule slide. No-ops when
+    //   - nothing is playing,
+    //   - the music stage is already what the projector shows,
+    //   - the override is already active.
+    _scheduleMusicOverride() {
+      if (this._musicOverrideTimer) {
+        clearTimeout(this._musicOverrideTimer);
+        this._musicOverrideTimer = null;
+      }
+      if (this.state.musicOverride) return;
+      if (!this._musicAudioEl || this._musicAudioEl.paused) return;
+      if (this._musicStageIsLive()) return;
+      this._musicOverrideTimer = setTimeout(() => {
+        this._musicOverrideTimer = null;
+        // Sanity — conditions may have changed while the timer was pending.
+        if (!this._musicAudioEl || this._musicAudioEl.paused) return;
+        if (!this.state.musicSlide) return;
+        this.state.musicOverride = true;
+        this._pushLive();
+        this._renderMonitors();
+      }, 15000);
+    },
+
+    _cancelMusicOverride() {
+      if (this._musicOverrideTimer) {
+        clearTimeout(this._musicOverrideTimer);
+        this._musicOverrideTimer = null;
+      }
+      this.state.musicOverride = false;
     },
 
     // Overlay the session-level motion choice onto the slide's style before
@@ -5123,6 +5180,9 @@ Second line here
     },
 
     _getLiveSlide() {
+      // If the 15-second override has fired, music takes the stage
+      // regardless of whatever schedule slide would normally show.
+      if (this.state.musicOverride && this.state.musicSlide) return this.state.musicSlide;
       // Priority (highest to lowest):
       //   liveDeck  — paged decks (multi-slide birthday, etc.)
       //   countdown — active countdown timer
