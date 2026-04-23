@@ -2423,11 +2423,13 @@
     _renderMusicPlayer() {
       const host = document.getElementById('music-float');
       if (!host) return;
+      this._wireMusicFloatDrag(host);
       if (!this._musicAudioEl || !this._musicTrackName) {
         host.innerHTML = '';
         host.classList.add('hidden');
         return;
       }
+      this._restoreMusicFloatPos(host);
       const paused = this._musicAudioEl.paused;
       const vol = Math.round((this.state.musicVolume ?? 0.85) * 100);
       const volIcon = vol === 0 ? '🔇' : (vol < 33 ? '🔈' : (vol < 66 ? '🔉' : '🔊'));
@@ -2469,6 +2471,75 @@
       range.addEventListener('change', () => {
         Store.setSetting('musicVolume', this.state.musicVolume);
       });
+    },
+
+    // Attach drag handlers to the floating player (once). Drags from any
+    // non-interactive area of the bar; buttons and inputs keep their own
+    // click handlers. Final position is saved to localStorage so it
+    // persists across reloads.
+    _wireMusicFloatDrag(host) {
+      if (host.__dragWired) return;
+      host.__dragWired = true;
+
+      host.addEventListener('pointerdown', (e) => {
+        // Don't hijack the controls — let clicks/slider drags through.
+        if (e.target.closest('button, input, a, [role="slider"]')) return;
+        if (e.button !== undefined && e.button !== 0) return;
+        e.preventDefault();
+
+        const rect = host.getBoundingClientRect();
+        const offX = e.clientX - rect.left;
+        const offY = e.clientY - rect.top;
+        host.classList.add('dragging');
+        try { host.setPointerCapture(e.pointerId); } catch (_) {}
+
+        const onMove = (ev) => {
+          const maxX = Math.max(0, window.innerWidth  - host.offsetWidth  - 4);
+          const maxY = Math.max(0, window.innerHeight - host.offsetHeight - 4);
+          const x = Math.max(4, Math.min(maxX, ev.clientX - offX));
+          const y = Math.max(4, Math.min(maxY, ev.clientY - offY));
+          host.style.left = x + 'px';
+          host.style.top  = y + 'px';
+          host.style.right  = 'auto';
+          host.style.bottom = 'auto';
+        };
+
+        const onUp = (ev) => {
+          host.removeEventListener('pointermove', onMove);
+          host.removeEventListener('pointerup',   onUp);
+          host.removeEventListener('pointercancel', onUp);
+          host.classList.remove('dragging');
+          try { host.releasePointerCapture(ev.pointerId); } catch (_) {}
+          try {
+            localStorage.setItem('paw.musicFloatPos', JSON.stringify({
+              left: parseInt(host.style.left, 10),
+              top:  parseInt(host.style.top,  10),
+            }));
+          } catch (_) {}
+        };
+
+        host.addEventListener('pointermove',   onMove);
+        host.addEventListener('pointerup',     onUp);
+        host.addEventListener('pointercancel', onUp);
+      });
+    },
+
+    // Apply last-saved position if it's still within the viewport; reset
+    // to the bottom-right default when the saved spot is off-screen.
+    _restoreMusicFloatPos(host) {
+      let saved = null;
+      try { saved = JSON.parse(localStorage.getItem('paw.musicFloatPos') || 'null'); }
+      catch (_) {}
+      if (!saved || typeof saved.left !== 'number' || typeof saved.top !== 'number') return;
+      const inView = saved.left >= 0
+        && saved.top >= 0
+        && saved.left <= window.innerWidth  - 120
+        && saved.top  <= window.innerHeight - 24;
+      if (!inView) return;
+      host.style.left = saved.left + 'px';
+      host.style.top  = saved.top  + 'px';
+      host.style.right  = 'auto';
+      host.style.bottom = 'auto';
     },
 
     // Step forward (dir = +1) or back (dir = -1) through the alphabetically
