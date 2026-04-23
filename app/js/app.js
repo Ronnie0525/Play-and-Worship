@@ -5339,11 +5339,20 @@ Second line here
       if (this.state.musicOverride) return;
       if (!this._musicAudioEl || this._musicAudioEl.paused) return;
       if (this._musicStageIsLive()) return;
+      // Never override a live video — the video has its own audio and
+      // the operator hasn't signalled they want music to take over the
+      // stage. The override is intended to cover static slides (songs,
+      // scripture, announcements), not a playing video.
+      const cur = this._getLiveSlide();
+      if (cur && cur.kind === 'video') return;
       this._musicOverrideTimer = setTimeout(() => {
         this._musicOverrideTimer = null;
         // Sanity — conditions may have changed while the timer was pending.
         if (!this._musicAudioEl || this._musicAudioEl.paused) return;
         if (!this.state.musicSlide) return;
+        // And re-check the video guard at fire time.
+        const now = this._getLiveSlide();
+        if (now && now.kind === 'video') return;
         this.state.musicOverride = true;
         this._pushLive();
         this._renderMonitors();
@@ -5722,6 +5731,15 @@ Second line here
       }
 
       if (slide.kind === 'music') {
+        // Same track / same role — just sync the paused flag instead of
+        // rebuilding, so the spinning disc + bar animation keeps its
+        // current frame.
+        if (prevId === nextId && stage.classList.contains('music')) {
+          stage.classList.toggle('paused', !!slide.paused);
+          const kicker = stage.querySelector('.mon-music-kicker');
+          if (kicker) kicker.textContent = slide.paused ? 'Paused' : 'Now Playing';
+          return;
+        }
         stage.classList.add('music');
         if (slide.paused) stage.classList.add('paused');
         let bars = '';

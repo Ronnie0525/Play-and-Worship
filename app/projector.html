@@ -173,6 +173,30 @@
       }
     }
 
+    // Same-video fast path — if the projector is already showing this
+    // exact video element, don't tear it down. Re-sends of the same slide
+    // happen whenever operator state mutates (music play/pause, monitor
+    // refresh, the 15s override tick); destroying the <video> would
+    // restart playback from zero every time. Just sync blackout and exit.
+    if (slide && slide.kind === 'video' && slide.id === currentVideoId
+        && stage.classList.contains('video')
+        && stage.querySelector('video')) {
+      stage.classList.toggle('blackout', !!blackout);
+      return;
+    }
+
+    // Same-music fast path — keep the spinning disc + bar animations
+    // running instead of rebuilding on every pause/resume/monitor tick.
+    if (slide && slide.kind === 'music'
+        && stage.dataset.musicId === slide.id
+        && stage.classList.contains('music')) {
+      stage.classList.toggle('paused', !!slide.paused);
+      stage.classList.toggle('blackout', !!blackout);
+      const kicker = stage.querySelector('.music-kicker');
+      if (kicker) kicker.textContent = slide.paused ? 'Paused' : 'Now Playing';
+      return;
+    }
+
     // Same-deck announcement paging — swap title + message only so the
     // background motion preset (kenburns, bokeh, rays, …) keeps running.
     if (slide && slide.kind === 'announcement' && slide.deckId
@@ -281,6 +305,7 @@
 
       if (slide.kind === 'music') {
         stage.classList.add('music');
+        stage.dataset.musicId = slide.id || '';
         if (slide.paused) stage.classList.add('paused');
         const trackName = (slide.name || 'Now Playing').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
         let bars = '';
