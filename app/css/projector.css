@@ -760,64 +760,58 @@ html, body {
   to   { background-position: 15px -300px, -25px -240px, 35px -340px, -20px -260px, 25px -320px, -10px -220px; }
 }
 
-/* ---- Neon Burst: radial neon lines + shimmering particles ---- */
+/* ---- Neon Burst: a soft cosmic nebula drifting behind shiny
+   neon star-particles that twinkle at different tempos. ---- */
 .stage.motion-neonburst {
   background-color: #05030f;
 }
 .stage.motion-neonburst::before {
-  /* Rotating conic neon beams — sharp thin lines against the dark. */
+  /* Big soft coloured clouds slow-rotating like a nebula. */
   content: '';
   position: absolute;
   top: 50%; left: 50%;
-  width: 180vmax; height: 180vmax;
+  width: 170vmax; height: 170vmax;
   transform: translate(-50%, -50%);
-  background: repeating-conic-gradient(from 0deg,
-    transparent 0deg 2.5deg,
-    rgba(0, 220, 255, 0.55) 2.5deg 3.2deg,
-    transparent 3.2deg 10deg,
-    rgba(255, 50, 180, 0.45) 10deg 10.8deg,
-    transparent 10.8deg 20deg,
-    rgba(120, 220, 255, 0.40) 20deg 20.7deg,
-    transparent 20.7deg 33deg);
-  filter: blur(1.2px);
-  -webkit-mask-image: radial-gradient(circle at center, #000 12%, rgba(0,0,0,0.75) 40%, transparent 78%);
-          mask-image: radial-gradient(circle at center, #000 12%, rgba(0,0,0,0.75) 40%, transparent 78%);
-  animation: neonSpin 9s linear infinite;
+  background:
+    radial-gradient(ellipse at 30% 40%, rgba(0, 200, 255, 0.38), transparent 42%),
+    radial-gradient(ellipse at 70% 55%, rgba(200, 80, 255, 0.32), transparent 42%),
+    radial-gradient(ellipse at 55% 75%, rgba(255, 80, 180, 0.28), transparent 38%),
+    radial-gradient(ellipse at 20% 70%, rgba(120, 220, 255, 0.24), transparent 40%);
+  filter: blur(55px);
+  animation: neonNebula 42s linear infinite;
   mix-blend-mode: screen;
   pointer-events: none;
   z-index: 0;
 }
 .stage.motion-neonburst::after {
-  /* Shiny particles pulsing outward from center in repeating bursts. */
+  /* Shiny neon 'stars' twinkling — mix of cyan / magenta / white. */
   content: '';
   position: absolute; inset: 0;
   background-image:
-    radial-gradient(6px 6px at 50% 50%, rgba(255, 255, 255, 1),     transparent 60%),
-    radial-gradient(4px 4px at 20% 30%, rgba(0, 220, 255, 0.95),    transparent 60%),
-    radial-gradient(5px 5px at 82% 28%, rgba(255, 70, 200, 0.92),   transparent 60%),
-    radial-gradient(4px 4px at 22% 78%, rgba(120, 230, 255, 0.95),  transparent 60%),
-    radial-gradient(6px 6px at 78% 76%, rgba(255, 255, 255, 0.98),  transparent 60%),
-    radial-gradient(3px 3px at 50% 18%, rgba(180, 240, 255, 0.95),  transparent 60%),
-    radial-gradient(5px 5px at 50% 84%, rgba(230, 120, 255, 0.90),  transparent 60%),
-    radial-gradient(4px 4px at 15% 52%, rgba(0, 200, 255, 0.92),    transparent 60%),
-    radial-gradient(4px 4px at 88% 50%, rgba(255, 255, 255, 0.95),  transparent 60%);
-  background-repeat: no-repeat;
-  background-position: center;
-  transform-origin: center;
-  animation: neonExplode 3.4s ease-out infinite;
+    radial-gradient(5px 5px at 12% 22%, #00f0ff, transparent 65%),
+    radial-gradient(4px 4px at 32% 68%, #ffffff, transparent 65%),
+    radial-gradient(6px 6px at 52% 18%, #ff50e0, transparent 65%),
+    radial-gradient(3px 3px at 72% 45%, #00f0ff, transparent 65%),
+    radial-gradient(5px 5px at 88% 75%, #ffffff, transparent 65%),
+    radial-gradient(4px 4px at 18% 85%, #ff50e0, transparent 65%),
+    radial-gradient(3px 3px at 45% 55%, #ffffff, transparent 65%),
+    radial-gradient(5px 5px at 62% 82%, #00f0ff, transparent 65%),
+    radial-gradient(4px 4px at 78% 10%, #ffffff, transparent 65%),
+    radial-gradient(3px 3px at 8% 55%, #00f0ff, transparent 65%),
+    radial-gradient(4px 4px at 92% 32%, #ff50e0, transparent 65%),
+    radial-gradient(5px 5px at 35% 38%, #ffffff, transparent 65%);
+  animation: neonTwinkle 2.6s ease-in-out infinite;
   mix-blend-mode: screen;
-  filter: blur(0.6px);
+  filter: drop-shadow(0 0 6px rgba(0, 240, 255, 0.55));
   pointer-events: none;
   z-index: 0;
 }
-@keyframes neonSpin {
+@keyframes neonNebula {
   to { transform: translate(-50%, -50%) rotate(360deg); }
 }
-@keyframes neonExplode {
-  0%   { transform: scale(0.4); opacity: 0.0; }
-  20%  { opacity: 1.0; }
-  80%  { opacity: 0.6; }
-  100% { transform: scale(1.9); opacity: 0.0; }
+@keyframes neonTwinkle {
+  0%, 100% { opacity: 1.00; }
+  50%      { opacity: 0.35; }
 }
 
 /* ---- Blue Embers: cool-toned embers rising (blue flame version) ---- */
