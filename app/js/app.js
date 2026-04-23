@@ -157,6 +157,7 @@
       liveDeck: null,               // out-of-band paged deck (e.g. multi-slide birthday) { kind, label, slides[], idx }
       musicSlide: null,             // active music-library playback (takes over the live stage like countdown)
       musicSearch: '',
+      musicVolume: 0.85,            // 0..1 — applied to every Audio element we create
     },
 
     // -------- init --------
@@ -174,6 +175,9 @@
       }
       if (settings.songCategory === 'worship' || settings.songCategory === 'hymnal') {
         this.state.songCategory = settings.songCategory;
+      }
+      if (typeof settings.musicVolume === 'number' && settings.musicVolume >= 0 && settings.musicVolume <= 1) {
+        this.state.musicVolume = settings.musicVolume;
       }
       if (settings.songLanguage === 'en' || settings.songLanguage === 'tl') {
         this.state.songLanguage = settings.songLanguage;
@@ -2368,6 +2372,7 @@
         <div class="lib-scroll" id="lib-music-list">
           <div class="bible-state">Loading…</div>
         </div>
+        <div class="lib-music-player" id="lib-music-player"></div>
         <div class="lib-actions">
           <button class="btn btn-primary" id="lib-music-upload" data-tip="Upload MP3 or other audio files">${ICONS.upload}<span>Upload Music</span></button>
           <input type="file" id="lib-music-input" accept="audio/*" multiple hidden>
@@ -2409,6 +2414,57 @@
       });
 
       this._renderLibraryMusicList(body);
+      this._renderMusicPlayer(body);
+    },
+
+    // Mini player bar rendered at the bottom of the Music panel — appears
+    // only when a track is loaded. Provides pause/resume, stop, and a
+    // volume slider (persisted to settings).
+    _renderMusicPlayer(body) {
+      const host = $('#lib-music-player', body || document);
+      if (!host) return;
+      if (!this._musicAudioEl || !this._musicTrackName) {
+        host.innerHTML = '';
+        host.classList.remove('active');
+        return;
+      }
+      const paused = this._musicAudioEl.paused;
+      const vol = Math.round((this.state.musicVolume ?? 0.85) * 100);
+      const volIcon = vol === 0 ? '🔇' : (vol < 33 ? '🔈' : (vol < 66 ? '🔉' : '🔊'));
+      host.classList.add('active');
+      host.innerHTML = `
+        <div class="music-player-top">
+          <button class="music-player-toggle" data-music-toggle title="${paused ? 'Play' : 'Pause'}">${paused ? ICONS.play : ICONS.pause}</button>
+          <div class="music-player-name" title="${escapeAttr(this._musicTrackName)}">${escapeHtml(this._musicTrackName)}</div>
+          <button class="music-player-stop" data-music-stop title="Stop">${ICONS.x}</button>
+        </div>
+        <div class="music-player-vol">
+          <span class="music-player-vol-ico" data-vol-ico>${volIcon}</span>
+          <input type="range" class="music-player-vol-range" id="music-player-vol" min="0" max="100" step="1" value="${vol}">
+          <span class="music-player-vol-num" data-vol-num>${vol}</span>
+        </div>
+      `;
+
+      host.querySelector('[data-music-toggle]').addEventListener('click', async () => {
+        if (!this._musicAudioId) return;
+        await this._toggleMusicPlayback(this._musicAudioId, null);
+      });
+      host.querySelector('[data-music-stop]').addEventListener('click', () => this._stopMusic());
+
+      const range = host.querySelector('#music-player-vol');
+      const numEl = host.querySelector('[data-vol-num]');
+      const icoEl = host.querySelector('[data-vol-ico]');
+      range.addEventListener('input', (e) => {
+        const v = Math.max(0, Math.min(100, parseInt(e.target.value, 10) || 0));
+        const frac = v / 100;
+        this.state.musicVolume = frac;
+        if (this._musicAudioEl) this._musicAudioEl.volume = frac;
+        if (numEl) numEl.textContent = String(v);
+        if (icoEl) icoEl.textContent = v === 0 ? '🔇' : (v < 33 ? '🔈' : (v < 66 ? '🔉' : '🔊'));
+      });
+      range.addEventListener('change', () => {
+        Store.setSetting('musicVolume', this.state.musicVolume);
+      });
     },
 
     async _renderLibraryMusicList(body) {
@@ -2485,8 +2541,13 @@
         // Leave state.musicSlide set so the Now Playing screen stays up,
         // just switch its playing flag so the visualizer can idle.
         if (this.state.musicSlide) this.state.musicSlide = { ...this.state.musicSlide, paused: true };
+        // Sync the inline row button too (works whether toggled from the row
+        // or the mini-player).
+        const rb = document.querySelector(`[data-music-play="${id}"]`);
+        if (rb) rb.innerHTML = ICONS.play;
         this._pushLive();
         this._renderMonitors();
+        this._renderMusicPlayer();
         return;
       }
       // If the same track is paused — resume.
@@ -2494,8 +2555,11 @@
         try { await this._musicAudioEl.play(); } catch (_) {}
         if (btn) btn.innerHTML = ICONS.pause;
         if (this.state.musicSlide) this.state.musicSlide = { ...this.state.musicSlide, paused: false };
+        const rb = document.querySelector(`[data-music-play="${id}"]`);
+        if (rb) rb.innerHTML = ICONS.pause;
         this._pushLive();
         this._renderMonitors();
+        this._renderMusicPlayer();
         return;
       }
       // Otherwise swap to the new track.
@@ -2507,6 +2571,7 @@
 
       const url = URL.createObjectURL(track.blob);
       const audio = new Audio(url);
+      audio.volume = this.state.musicVolume ?? 0.85;
       audio.addEventListener('ended', () => {
         if (btn) btn.innerHTML = ICONS.play;
         this._stopMusic();
@@ -2523,6 +2588,7 @@
       this.state.musicSlide = { id: `music_${id}`, kind: 'music', name: track.name || 'Music', paused: false };
       this._pushLive();
       this._renderMonitors();
+      this._renderMusicPlayer();
     },
 
     _stopMusic(opts = {}) {
@@ -2543,6 +2609,9 @@
         // item still live, it quietly comes back. Otherwise the stage clears.
         this._pushLive();
         this._renderMonitors();
+        // Reset any row play buttons back to the play icon.
+        $$('.lib-music-play').forEach(b => { b.innerHTML = ICONS.play; });
+        this._renderMusicPlayer();
       }
     },
 
