@@ -2357,10 +2357,6 @@
 
     _renderLibraryMusic(body) {
       body.innerHTML = `
-        <div class="lib-actions lib-music-upload">
-          <button class="btn btn-primary" id="lib-music-upload" data-tip="Upload MP3 or other audio files">${ICONS.upload}<span>Upload Music</span></button>
-          <input type="file" id="lib-music-input" accept="audio/*" multiple hidden>
-        </div>
         <div class="lib-search">
           <div class="search-box">
             <span data-icon="search"></span>
@@ -2369,6 +2365,10 @@
         </div>
         <div class="lib-scroll" id="lib-music-list">
           <div class="bible-state">Loading…</div>
+        </div>
+        <div class="lib-actions">
+          <button class="btn btn-primary" id="lib-music-upload" data-tip="Upload MP3 or other audio files">${ICONS.upload}<span>Upload Music</span></button>
+          <input type="file" id="lib-music-input" accept="audio/*" multiple hidden>
         </div>
       `;
 
@@ -2470,12 +2470,16 @@
       if (this._musicAudioEl && this._musicAudioId === id && !this._musicAudioEl.paused) {
         this._musicAudioEl.pause();
         if (btn) btn.innerHTML = ICONS.play;
+        if (Projector.isOpen()) Projector.clear();
         return;
       }
       // If the same track is paused — resume.
       if (this._musicAudioEl && this._musicAudioId === id && this._musicAudioEl.paused) {
         try { await this._musicAudioEl.play(); } catch (_) {}
         if (btn) btn.innerHTML = ICONS.pause;
+        if (Projector.isOpen() && this._musicTrackName) {
+          Projector.showSlide({ id: `music_${id}`, kind: 'music', name: this._musicTrackName });
+        }
         return;
       }
       // Otherwise swap to the new track.
@@ -2494,9 +2498,13 @@
       this._musicAudioEl = audio;
       this._musicAudioId = id;
       this._musicAudioUrl = url;
+      this._musicTrackName = track.name || 'Music';
       try { await audio.play(); } catch (_) {}
       rowBtns.forEach(b => { b.innerHTML = ICONS.play; });
       if (btn) btn.innerHTML = ICONS.pause;
+      if (Projector.isOpen()) {
+        Projector.showSlide({ id: `music_${id}`, kind: 'music', name: track.name || 'Music' });
+      }
     },
 
     _stopMusic() {
@@ -2510,6 +2518,9 @@
       this._musicAudioEl = null;
       this._musicAudioId = null;
       this._musicAudioUrl = null;
+      this._musicTrackName = null;
+      // Clear the projector if it was showing the music stage.
+      if (Projector.isOpen()) Projector.clear();
     },
 
     _formatBytes(n) {
