@@ -199,13 +199,29 @@ html, body {
     #000;
 }
 
-/* Timer finished — custom after-timer message takes over. */
+/* Timer finished — custom after-timer message takes over.
+   Entrance: bloom from blurred/translated to crisp. Then a continuous
+   breathing glow and a slow ambient halo behind the text so the stage
+   never feels static. */
 .stage.countdown.ended {
   background:
     radial-gradient(ellipse at 50% 0%, rgba(200, 157, 74, 0.15) 0%, transparent 60%),
     linear-gradient(180deg, #08090f 0%, #0a0f1a 100%);
+  overflow: hidden;
+}
+.stage.countdown.ended::before {
+  content: '';
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 80vmax; height: 80vmax;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(200, 157, 74, 0.16) 0%, transparent 60%);
+  filter: blur(20px);
+  pointer-events: none;
+  animation: cdEndedHalo 6s ease-in-out infinite;
 }
 .stage.countdown .cd-ended {
+  position: relative;
   font-family: 'Source Serif 4', Georgia, serif;
   font-weight: 600;
   font-size: 10vw;
@@ -214,12 +230,39 @@ html, body {
   color: #F8ECD0;
   text-align: center;
   max-width: 88vw;
-  text-shadow: 0 6px 36px rgba(0, 0, 0, 0.6);
-  animation: cdEndedIn 0.9s cubic-bezier(.22, .61, .36, 1) both;
+  text-shadow:
+    0 6px 36px rgba(0, 0, 0, 0.6),
+    0 0 28px rgba(200, 157, 74, 0.25);
+  animation:
+    cdEndedIn 1.1s cubic-bezier(.22, .61, .36, 1) both,
+    cdEndedBreathe 4.2s ease-in-out 1.1s infinite;
 }
+
 @keyframes cdEndedIn {
-  from { opacity: 0; transform: translateY(16px) scale(0.97); }
-  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+  0%   { opacity: 0; transform: translateY(36px) scale(0.86); filter: blur(10px); letter-spacing: 0.08em; }
+  60%  { opacity: 1;                                                              }
+  100% { opacity: 1; transform: translateY(0)    scale(1);    filter: blur(0);    letter-spacing: -0.01em; }
+}
+
+@keyframes cdEndedBreathe {
+  0%, 100% {
+    transform: scale(1);
+    text-shadow:
+      0 6px 36px rgba(0, 0, 0, 0.6),
+      0 0 24px rgba(200, 157, 74, 0.22);
+  }
+  50% {
+    transform: scale(1.015);
+    text-shadow:
+      0 6px 36px rgba(0, 0, 0, 0.6),
+      0 0 60px rgba(200, 157, 74, 0.55),
+      0 0 120px rgba(200, 157, 74, 0.18);
+  }
+}
+
+@keyframes cdEndedHalo {
+  0%, 100% { opacity: 0.55; transform: translate(-50%, -50%) scale(0.92); }
+  50%      { opacity: 1;    transform: translate(-50%, -50%) scale(1.08); }
 }
 
 /* =============================================================
