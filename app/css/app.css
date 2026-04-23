@@ -6502,19 +6502,22 @@ body.no-loader .login-gate { display: none; }
   overflow: hidden;
 }
 .monitor-stage.music .mon-music-disc {
-  width: 56px; height: 56px;
+  width: 42px; height: 42px;
   border-radius: 50%;
+  overflow: hidden;
   display: grid;
   place-items: center;
   animation: monMusicSpin 12s linear infinite;
   position: relative;
-  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.85));
+  box-shadow:
+    0 0 0 1.5px rgba(200, 157, 74, 0.22),
+    0 6px 14px rgba(0, 0, 0, 0.8);
 }
 .monitor-stage.music .mon-music-disc-logo {
   position: relative;
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   z-index: 1;
 }
 .monitor-stage.music.paused .mon-music-disc { animation-play-state: paused; }
