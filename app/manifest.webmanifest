@@ -1,6 +1,6 @@
 {
   "name": "Play & Worship",
-  "short_name": "Play & Worship",
+  "short_name": "P&Worship",
   "description": "Modern worship presentation — songs, scripture, media, and a dedicated live projector.",
   "start_url": "./",
   "scope": "./",
@@ -13,13 +13,13 @@
   "icons": [
     {
       "src": "../assets/logo.svg",
-      "sizes": "any",
+      "sizes": "192x192 512x512 any",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
       "src": "../assets/logo-mark-gold.svg",
-      "sizes": "any",
+      "sizes": "192x192 512x512 any",
       "type": "image/svg+xml",
       "purpose": "maskable"
     }
