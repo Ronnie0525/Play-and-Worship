@@ -4612,6 +4612,114 @@ body.no-loader .login-gate { display: none; }
 
 /* ---- Breathe ---- */
 .slide-preview.motion-breathe,
+/* ---- Blue Bokeh (monitor + preview thumbnail) ---- */
+.slide-preview.motion-bluebokeh,
+.monitor-stage.motion-bluebokeh {
+  background:
+    radial-gradient(ellipse at 50% 30%, rgba(20, 60, 140, 0.55), transparent 65%),
+    linear-gradient(180deg, #020818 0%, #000510 100%);
+}
+.slide-preview.motion-bluebokeh::before,
+.slide-preview.motion-bluebokeh::after,
+.monitor-stage.motion-bluebokeh::before,
+.monitor-stage.motion-bluebokeh::after {
+  content: '';
+  position: absolute; inset: 0;
+  background-repeat: repeat;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 0;
+}
+.slide-preview.motion-bluebokeh::before,
+.monitor-stage.motion-bluebokeh::before {
+  background-image:
+    radial-gradient(15px 15px at 12% 20%, rgba(80, 180, 255, 0.85),  transparent 60%),
+    radial-gradient(18px 18px at 62% 32%, rgba(100, 200, 255, 0.80), transparent 60%),
+    radial-gradient(12px 12px at 82% 72%, rgba(120, 210, 255, 0.75), transparent 60%),
+    radial-gradient(16px 16px at 30% 78%, rgba(60, 160, 240, 0.80),  transparent 60%),
+    radial-gradient(13px 13px at 52% 48%, rgba(100, 190, 255, 0.72), transparent 60%),
+    radial-gradient(14px 14px at 88% 18%, rgba(80, 180, 255, 0.78),  transparent 60%);
+  background-size: 180px 260px, 210px 290px, 160px 230px, 195px 270px, 170px 240px, 200px 280px;
+  filter: blur(9px);
+  animation: blueBokehDriftA 28s linear infinite;
+}
+.slide-preview.motion-bluebokeh::after,
+.monitor-stage.motion-bluebokeh::after {
+  background-image:
+    radial-gradient(3px 3px at 18% 32%, rgba(180, 230, 255, 1),    transparent 62%),
+    radial-gradient(2.5px 2.5px at 55% 62%, rgba(210, 240, 255, 0.95), transparent 62%),
+    radial-gradient(3.5px 3.5px at 82% 22%, rgba(120, 210, 255, 0.98), transparent 62%),
+    radial-gradient(2px 2px at 35% 88%, rgba(200, 235, 255, 0.92), transparent 62%),
+    radial-gradient(3px 3px at 70% 48%, rgba(140, 220, 255, 0.95), transparent 62%),
+    radial-gradient(2.5px 2.5px at 10% 72%, rgba(210, 240, 255, 0.95), transparent 62%),
+    radial-gradient(3.5px 3.5px at 92% 82%, rgba(120, 210, 255, 0.92), transparent 62%),
+    radial-gradient(2px 2px at 45% 15%, rgba(180, 230, 255, 0.95), transparent 62%),
+    radial-gradient(3px 3px at 60% 78%, rgba(160, 220, 255, 0.93), transparent 62%);
+  background-size: 100px 140px, 85px 120px, 110px 155px, 75px 110px, 95px 135px, 90px 125px, 105px 145px, 80px 115px, 100px 140px;
+  filter: drop-shadow(0 0 5px rgba(120, 200, 255, 0.75));
+  animation: blueBokehDriftB 18s linear infinite;
+}
+@keyframes blueBokehDriftA {
+  from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+  to   { background-position:  50px -520px, -80px -580px,  40px  460px, -60px -540px,  55px  480px, -45px -560px; }
+}
+@keyframes blueBokehDriftB {
+  from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+  to   { background-position: -30px -280px,  40px  240px, -25px -310px,  35px  220px, -40px -270px,  30px  250px, -20px -290px,  45px  230px, -35px -280px; }
+}
+
+/* ---- Blue Rise (monitor + preview thumbnail) ---- */
+.slide-preview.motion-bluerise,
+.monitor-stage.motion-bluerise {
+  background:
+    radial-gradient(ellipse at 50% 100%, rgba(25, 70, 150, 0.50), transparent 65%),
+    linear-gradient(180deg, #020818 0%, #000510 100%);
+}
+.slide-preview.motion-bluerise::before,
+.slide-preview.motion-bluerise::after,
+.monitor-stage.motion-bluerise::before,
+.monitor-stage.motion-bluerise::after {
+  content: '';
+  position: absolute; inset: 0;
+  background-repeat: repeat;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 0;
+}
+.slide-preview.motion-bluerise::before,
+.monitor-stage.motion-bluerise::before {
+  background-image:
+    radial-gradient(14px 14px at 12% 70%, rgba(80, 180, 255, 0.85),  transparent 60%),
+    radial-gradient(17px 17px at 62% 40%, rgba(100, 200, 255, 0.80), transparent 60%),
+    radial-gradient(12px 12px at 82% 80%, rgba(120, 210, 255, 0.75), transparent 60%),
+    radial-gradient(15px 15px at 40% 30%, rgba(60, 160, 240, 0.80),  transparent 60%),
+    radial-gradient(13px 13px at 10% 50%, rgba(160, 220, 255, 0.70), transparent 60%);
+  background-size: 170px 280px, 200px 300px, 150px 240px, 180px 270px, 160px 250px;
+  filter: blur(8px);
+  animation: blueRiseBig 26s linear infinite;
+}
+.slide-preview.motion-bluerise::after,
+.monitor-stage.motion-bluerise::after {
+  background-image:
+    radial-gradient(2.5px 2.5px at 15% 60%, rgba(210, 240, 255, 1),    transparent 65%),
+    radial-gradient(2px 2px at 50% 80%, rgba(180, 220, 255, 0.95), transparent 65%),
+    radial-gradient(3.5px 3.5px at 75% 50%, rgba(120, 210, 255, 0.95), transparent 65%),
+    radial-gradient(2px 2px at 35% 25%, rgba(200, 235, 255, 0.95), transparent 65%),
+    radial-gradient(3px 3px at 90% 15%, rgba(100, 200, 255, 0.92), transparent 65%),
+    radial-gradient(2.5px 2.5px at 5%  35%, rgba(210, 240, 255, 0.95), transparent 65%);
+  background-size: 80px 160px, 60px 130px, 95px 180px, 65px 140px, 85px 170px, 55px 120px;
+  filter: drop-shadow(0 0 4px rgba(120, 200, 255, 0.7));
+  animation: blueRiseSmall 14s linear infinite;
+}
+@keyframes blueRiseBig {
+  from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0; }
+  to   { background-position: 20px -560px, -40px -600px, 30px -480px, -20px -540px, 15px -500px; }
+}
+@keyframes blueRiseSmall {
+  from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+  to   { background-position: 10px -320px, -20px -260px, 25px -360px, -15px -280px, 20px -340px, -8px -240px; }
+}
+
 .monitor-stage.motion-breathe {
   animation: breathePulse 9s ease-in-out infinite;
 }
@@ -5126,6 +5234,38 @@ body.no-loader .login-gate { display: none; }
 @keyframes chipBlueEmbers {
   from { background-position: 0 100%, 0 100%, 0 100%, 0 0; }
   to   { background-position: 0 -100%, 0 -100%, 0 -100%, 0 0; }
+}
+
+.tb-motion-swatch.motion-bluebokeh,
+.motion-menu-swatch.motion-bluebokeh {
+  background:
+    radial-gradient(3px 3px at 25% 35%, rgba(80, 180, 255, 0.75), transparent 55%),
+    radial-gradient(2px 2px at 70% 60%, rgba(120, 210, 255, 0.65), transparent 55%),
+    radial-gradient(1px 1px at 45% 80%, rgba(200, 230, 255, 0.9), transparent),
+    radial-gradient(0.8px 0.8px at 85% 25%, rgba(180, 230, 255, 0.9), transparent),
+    radial-gradient(0.8px 0.8px at 15% 70%, rgba(140, 220, 255, 0.9), transparent),
+    #020818;
+  animation: chipBlueBokeh 3s ease-in-out infinite alternate;
+}
+@keyframes chipBlueBokeh {
+  0%   { filter: brightness(0.9); }
+  100% { filter: brightness(1.15); }
+}
+
+.tb-motion-swatch.motion-bluerise,
+.motion-menu-swatch.motion-bluerise {
+  background:
+    radial-gradient(2px 2px at 30% 60%, rgba(120, 200, 255, 0.9), transparent 60%),
+    radial-gradient(1.5px 1.5px at 65% 40%, rgba(80, 180, 255, 0.85), transparent 60%),
+    radial-gradient(1px 1px at 80% 70%, rgba(200, 230, 255, 0.95), transparent),
+    radial-gradient(0.8px 0.8px at 45% 25%, rgba(180, 220, 255, 0.95), transparent),
+    #020818;
+  background-size: 100% 200%, 100% 200%, 100% 200%, 100% 200%, 100% 100%;
+  animation: chipBlueRise 2.2s linear infinite;
+}
+@keyframes chipBlueRise {
+  from { background-position: 0 100%, 0 100%, 0 100%, 0 100%, 0 0; }
+  to   { background-position: 0 -100%, 0 -100%, 0 -100%, 0 -100%, 0 0; }
 }
 
 .tb-motion-label {
