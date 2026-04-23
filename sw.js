@@ -17,7 +17,7 @@
    Bump CACHE_VERSION to invalidate on a breaking change.
    ============================================================ */
 
-const CACHE_VERSION = 'paw-v16';
+const CACHE_VERSION = 'paw-v17';
 const SHELL = [
   './',
   './index.html',
@@ -73,7 +73,17 @@ const CDN_ALLOW = [
 const isNavigate = (req) => req.mode === 'navigate'
   || (req.method === 'GET' && req.headers.get('accept')?.includes('text/html'));
 
+// Seeded music tracks are stored in IndexedDB by the app on first run,
+// so the service worker shouldn't duplicate them (~225 MB). Network
+// requests for those URLs pass through without caching.
+const MUSIC_FOLDER = '/assets/music/';
+const isSeedMusic = (url) =>
+  url.origin === self.location.origin
+  && url.pathname.includes(MUSIC_FOLDER)
+  && !/manifest\.json$/i.test(url.pathname);
+
 const isCacheable = (url) => {
+  if (isSeedMusic(url)) return false;
   if (url.origin === self.location.origin) return true;
   return CDN_ALLOW.some((origin) => url.href.startsWith(origin));
 };

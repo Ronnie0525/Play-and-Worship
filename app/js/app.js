@@ -274,6 +274,71 @@
       } catch (e) {
         console.warn('media hydrate failed', e);
       }
+      // Seed the bundled MP3 library on first launch (idempotent via a
+      // localStorage flag). Non-blocking so the UI is ready immediately
+      // and tracks stream in as they finish downloading.
+      this._seedBundledMusic();
+    },
+
+    // Fetch the bundled music manifest and, on the very first launch of
+    // this browser, import every listed track into the Music library.
+    // Subsequent launches skip — even if the user has deleted tracks,
+    // we don't re-add them (respecting their curation).
+    async _seedBundledMusic() {
+      const SEED_FLAG = 'paw.music.seededV1';
+      try { if (localStorage.getItem(SEED_FLAG) === 'done') return; } catch (_) { return; }
+      if (typeof MediaStore === 'undefined') return;
+
+      let manifest = null;
+      try {
+        const res = await fetch('../assets/music/manifest.json', { cache: 'no-cache' });
+        if (!res.ok) throw new Error(`manifest ${res.status}`);
+        manifest = await res.json();
+      } catch (e) {
+        console.warn('music seed: no manifest', e);
+        return;
+      }
+      if (!Array.isArray(manifest) || !manifest.length) {
+        try { localStorage.setItem(SEED_FLAG, 'done'); } catch (_) {}
+        return;
+      }
+
+      // If the user already has tracks in the library (e.g. migrating from
+      // an older version), don't seed over them.
+      let existing = [];
+      try { existing = await MediaStore.getAudio(); } catch (_) {}
+      if (existing && existing.length) {
+        try { localStorage.setItem(SEED_FLAG, 'done'); } catch (_) {}
+        return;
+      }
+
+      let ok = 0, fail = 0;
+      for (const entry of manifest) {
+        try {
+          const url = `../assets/music/${encodeURIComponent(entry.file)}`;
+          const res = await fetch(url, { cache: 'force-cache' });
+          if (!res.ok) throw new Error(`fetch ${res.status}`);
+          const blob = await res.blob();
+          await MediaStore.putAudio({
+            id: `seed_${entry.file.replace(/\W+/g, '_').toLowerCase()}`,
+            name: entry.name,
+            type: blob.type || 'audio/mpeg',
+            size: blob.size,
+            blob,
+            createdAt: Date.now(),
+            _seeded: true,
+          });
+          ok++;
+        } catch (e) {
+          console.warn('music seed track failed', entry.file, e);
+          fail++;
+        }
+      }
+      try { localStorage.setItem(SEED_FLAG, 'done'); } catch (_) {}
+      if (ok) toast(`Loaded ${ok} starter track${ok === 1 ? '' : 's'}`, 'ok');
+      if (fail) toast(`${fail} track${fail === 1 ? '' : 's'} failed to load`, 'error');
+      // Refresh the Music panel if it's currently visible.
+      if (this.state.libraryTab === 'music') this._renderLibrary();
     },
 
     // shows meaningful content across every panel (Library, Preview,
