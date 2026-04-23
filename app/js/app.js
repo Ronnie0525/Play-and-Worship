@@ -1878,8 +1878,8 @@
       ['bluefire',   'Blue Fire'],
       ['neonburst',  'Neon Burst'],
       ['blueembers', 'Blue Embers'],
-      ['bluebokeh',  'Blue Bokeh'],
-      ['bluerise',   'Blue Rise'],
+      ['bluebokeh',  'Blue Rain'],
+      ['bluerise',   'Blue Halo'],
     ],
 
     _refreshMotionButton() {

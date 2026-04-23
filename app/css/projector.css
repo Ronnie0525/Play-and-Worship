@@ -886,13 +886,11 @@ html, body {
   to   { background-position: 15px -300px, -25px -240px, 35px -340px, -20px -260px, 25px -320px, -10px -220px; }
 }
 
-/* ---- Blue Bokeh: deep-space depth-of-field — big soft out-of-focus
-   orbs drift behind small bright 'in focus' sparks. Both layers wander
-   in random directions, not in lockstep, so the field never feels
-   like a single moving sheet. ---- */
+/* ---- Blue Rain: big blurred bokeh orbs + sharp bright particles,
+   both falling straight top-to-bottom at different speeds. ---- */
 .stage.motion-bluebokeh {
   background:
-    radial-gradient(ellipse at 50% 30%, rgba(20, 60, 140, 0.55), transparent 65%),
+    radial-gradient(ellipse at 50% 0%, rgba(25, 70, 140, 0.45), transparent 65%),
     linear-gradient(180deg, #020818 0%, #000510 100%);
 }
 .stage.motion-bluebokeh::before,
@@ -905,7 +903,7 @@ html, body {
   z-index: 0;
 }
 .stage.motion-bluebokeh::before {
-  /* Big, heavily-blurred bokeh orbs — the 'out of focus' layer. */
+  /* Big heavily-blurred bokeh orbs falling. */
   background-image:
     radial-gradient(32px 32px at 12% 20%, rgba(80, 180, 255, 0.85),  transparent 60%),
     radial-gradient(38px 38px at 62% 32%, rgba(100, 200, 255, 0.80), transparent 60%),
@@ -915,10 +913,10 @@ html, body {
     radial-gradient(30px 30px at 88% 18%, rgba(80, 180, 255, 0.78),  transparent 60%);
   background-size: 360px 520px, 420px 580px, 320px 460px, 390px 540px, 340px 480px, 400px 560px;
   filter: blur(18px);
-  animation: blueBokehDriftA 28s linear infinite;
+  animation: blueRainBig 22s linear infinite;
 }
 .stage.motion-bluebokeh::after {
-  /* Sharp bright particles — the 'in focus' layer. */
+  /* Sharp bright particles falling faster. */
   background-image:
     radial-gradient(6px 6px at 18% 32%, rgba(180, 230, 255, 1),    transparent 62%),
     radial-gradient(5px 5px at 55% 62%, rgba(210, 240, 255, 0.95), transparent 62%),
@@ -931,73 +929,73 @@ html, body {
     radial-gradient(6px 6px at 60% 78%, rgba(160, 220, 255, 0.93), transparent 62%);
   background-size: 200px 280px, 170px 240px, 220px 310px, 150px 220px, 190px 270px, 180px 250px, 210px 290px, 160px 230px, 200px 280px;
   filter: drop-shadow(0 0 8px rgba(120, 200, 255, 0.75));
-  animation: blueBokehDriftB 18s linear infinite;
+  animation: blueRainSmall 11s linear infinite;
 }
-@keyframes blueBokehDriftA {
-  from {
-    background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
-  }
-  to {
-    background-position:  50px -520px, -80px -580px,  40px  460px, -60px -540px,  55px  480px, -45px -560px;
-  }
+@keyframes blueRainBig {
+  from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+  to   { background-position: 0 520px, 0 580px, 0 460px, 0 540px, 0 480px, 0 560px; }
 }
-@keyframes blueBokehDriftB {
-  from {
-    background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
-  }
-  to {
-    background-position: -30px -280px,  40px  240px, -25px -310px,  35px  220px, -40px -270px,  30px  250px, -20px -290px,  45px  230px, -35px -280px;
-  }
+@keyframes blueRainSmall {
+  from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+  to   { background-position: 0 280px, 0 240px, 0 310px, 0 220px, 0 270px, 0 250px, 0 290px, 0 230px, 0 280px; }
 }
 
-/* ---- Blue Rise: same bokeh palette, but every particle drifts
-   upward — softer, calmer feel (like bubbles or lanterns rising). ---- */
+/* ---- Blue Halo: a cool-blue light beam descending from above,
+   with gentle dust motes floating down through the cone. ---- */
 .stage.motion-bluerise {
-  background:
-    radial-gradient(ellipse at 50% 100%, rgba(25, 70, 150, 0.50), transparent 65%),
-    linear-gradient(180deg, #020818 0%, #000510 100%);
+  background: linear-gradient(180deg, #020818 0%, #000308 100%);
 }
-.stage.motion-bluerise::before,
-.stage.motion-bluerise::after {
+.stage.motion-bluerise::before {
+  /* Big cone of blue light from the top. Multi-stop ellipses stacked
+     so the beam fades out toward the edges and the bottom, like a
+     spotlight cutting through haze. Gentle pulse + subtle sway. */
   content: '';
-  position: absolute; inset: 0;
-  background-repeat: repeat;
+  position: absolute;
+  top: -5%;
+  left: 50%;
+  width: 160%;
+  height: 120%;
+  transform: translateX(-50%);
+  background:
+    radial-gradient(ellipse 55% 90% at 50% 0%,  rgba(120, 200, 255, 0.55), transparent 58%),
+    radial-gradient(ellipse 35% 70% at 50% 0%,  rgba(180, 230, 255, 0.50), transparent 50%),
+    radial-gradient(ellipse 18% 55% at 50% 0%,  rgba(220, 245, 255, 0.55), transparent 45%);
+  filter: blur(24px);
   mix-blend-mode: screen;
+  animation: blueHaloBreathe 6s ease-in-out infinite;
   pointer-events: none;
   z-index: 0;
 }
-.stage.motion-bluerise::before {
-  /* Big blurred orbs rising slowly. */
-  background-image:
-    radial-gradient(30px 30px at 12% 70%, rgba(80, 180, 255, 0.85),  transparent 60%),
-    radial-gradient(36px 36px at 62% 40%, rgba(100, 200, 255, 0.80), transparent 60%),
-    radial-gradient(26px 26px at 82% 80%, rgba(120, 210, 255, 0.75), transparent 60%),
-    radial-gradient(32px 32px at 40% 30%, rgba(60, 160, 240, 0.80),  transparent 60%),
-    radial-gradient(28px 28px at 10% 50%, rgba(160, 220, 255, 0.70), transparent 60%);
-  background-size: 340px 560px, 400px 600px, 300px 480px, 360px 540px, 320px 500px;
-  filter: blur(16px);
-  animation: blueRiseBig 26s linear infinite;
-}
 .stage.motion-bluerise::after {
-  /* Sharp sparks rising faster. */
+  /* Dust motes falling through the beam. Concentrated in the center
+     column because a real spotlight only lights what's inside it. */
+  content: '';
+  position: absolute; inset: 0;
   background-image:
-    radial-gradient(5px 5px at 15% 60%, rgba(210, 240, 255, 1),    transparent 65%),
-    radial-gradient(4px 4px at 50% 80%, rgba(180, 220, 255, 0.95), transparent 65%),
-    radial-gradient(7px 7px at 75% 50%, rgba(120, 210, 255, 0.95), transparent 65%),
-    radial-gradient(4px 4px at 35% 25%, rgba(200, 235, 255, 0.95), transparent 65%),
-    radial-gradient(6px 6px at 90% 15%, rgba(100, 200, 255, 0.92), transparent 65%),
-    radial-gradient(5px 5px at 5%  35%, rgba(210, 240, 255, 0.95), transparent 65%);
-  background-size: 160px 320px, 120px 260px, 190px 360px, 130px 280px, 170px 340px, 110px 240px;
-  filter: drop-shadow(0 0 7px rgba(120, 200, 255, 0.7));
-  animation: blueRiseSmall 14s linear infinite;
+    radial-gradient(4px 4px at 45% 12%, rgba(220, 240, 255, 0.95), transparent 70%),
+    radial-gradient(3px 3px at 55% 28%, rgba(180, 220, 255, 0.90), transparent 70%),
+    radial-gradient(5px 5px at 48% 45%, rgba(200, 235, 255, 0.95), transparent 70%),
+    radial-gradient(3px 3px at 52% 62%, rgba(150, 210, 255, 0.92), transparent 70%),
+    radial-gradient(4px 4px at 46% 82%, rgba(200, 235, 255, 0.90), transparent 70%),
+    radial-gradient(3px 3px at 58% 15%, rgba(180, 220, 255, 0.88), transparent 70%),
+    radial-gradient(4px 4px at 40% 35%, rgba(220, 240, 255, 0.92), transparent 70%),
+    radial-gradient(3px 3px at 60% 55%, rgba(180, 220, 255, 0.88), transparent 70%),
+    radial-gradient(4px 4px at 42% 72%, rgba(200, 235, 255, 0.90), transparent 70%);
+  background-repeat: repeat;
+  background-size: 130px 360px, 110px 320px, 150px 400px, 120px 340px, 140px 380px, 100px 300px, 125px 350px, 135px 370px, 115px 330px;
+  filter: drop-shadow(0 0 6px rgba(150, 210, 255, 0.6));
+  mix-blend-mode: screen;
+  animation: blueHaloDust 16s linear infinite;
+  pointer-events: none;
+  z-index: 0;
 }
-@keyframes blueRiseBig {
-  from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0; }
-  to   { background-position: 20px -560px, -40px -600px, 30px -480px, -20px -540px, 15px -500px; }
+@keyframes blueHaloBreathe {
+  0%, 100% { opacity: 0.80; transform: translateX(-50%) scale(1)    skewX(0deg); }
+  50%      { opacity: 1.00; transform: translateX(-50%) scale(1.04) skewX(-1.2deg); }
 }
-@keyframes blueRiseSmall {
-  from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
-  to   { background-position: 10px -320px, -20px -260px, 25px -360px, -15px -280px, 20px -340px, -8px -240px; }
+@keyframes blueHaloDust {
+  from { background-position: 0 -360px, 0 -320px, 0 -400px, 0 -340px, 0 -380px, 0 -300px, 0 -350px, 0 -370px, 0 -330px; }
+  to   { background-position: 0  360px, 0  320px, 0  400px, 0  340px, 0  380px, 0  300px, 0  350px, 0  370px, 0  330px; }
 }
 
 /* ---- Breathe: gentle brightness + saturation pulse on base ---- */
