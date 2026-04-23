@@ -67,6 +67,9 @@ const Store = (() => {
   const getSong  = (id) => songs.find(s => s.id === id) || null;
 
   const saveSong = (song) => {
+    // Drafts (new-song editor state before the operator clicks Save) are
+    // kept in memory by the app layer and must not land in the library.
+    if (!song || song._isDraft) return;
     const i = songs.findIndex(s => s.id === song.id);
     if (i >= 0) songs[i] = song;
     else songs.unshift(song);

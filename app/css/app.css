@@ -5544,6 +5544,22 @@ body.no-loader .login-gate { display: none; }
   }
 }
 
+/* Draft indicator in the song-editor header */
+.center-title .draft-tag {
+  display: inline-block;
+  margin-left: 10px;
+  padding: 2px 8px;
+  vertical-align: middle;
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--amber, #C89D4A);
+  background: rgba(200, 157, 74, 0.1);
+  border: 1px solid rgba(200, 157, 74, 0.35);
+  border-radius: 999px;
+}
+
 /* =============================================================
    First-run welcome modal
    ============================================================= */

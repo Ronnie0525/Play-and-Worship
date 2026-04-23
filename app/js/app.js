@@ -3823,14 +3823,37 @@
       // Tagalog tab gives you a Tagalog song — no extra step.
       const language = this.state.songLanguage || 'en';
       const s = Store.newSong({ category, language });
-      Store.saveSong(s);
-      this.openSong(s.id);
-      toast(category === 'hymnal' ? 'New hymn created' : 'New song created', 'ok');
+      s._isDraft = true;
+      // If the operator had another draft going, silently drop it when empty,
+      // or keep them in the existing editor when there's unsaved content.
+      if (this.state.draftSong && this._draftHasContent(this.state.draftSong)) {
+        return toast('Finish or discard the current draft first', 'info');
+      }
+      this.state.draftSong = s;
+      this.state.editingSong = s.id;
+      this.state.activeSongId = null;
+      this.state.activePptxId = null;
+      this.state.activeVideoId = null;
+      this.state.selectedScheduleIdx = -1;
+      this.renderAll();
+      toast(category === 'hymnal' ? 'New hymn draft — click Save to add it to your library' : 'New song draft — click Save to add it to your library', 'info');
+    },
+
+    _draftHasContent(s) {
+      if (!s) return false;
+      const titleChanged = s.title && s.title !== 'Untitled Song';
+      const hasAuthor = !!(s.author && s.author.trim());
+      const hasCcli = !!(s.ccli && s.ccli.trim());
+      const hasLyrics = Array.isArray(s.sections) && s.sections.some(sec => sec.text && sec.text.trim());
+      return titleChanged || hasAuthor || hasCcli || hasLyrics;
     },
 
     _renderSongEditor(c) {
-      const song = Store.getSong(this.state.editingSong);
+      const draft = this.state.draftSong && this.state.draftSong.id === this.state.editingSong
+        ? this.state.draftSong : null;
+      const song = draft || Store.getSong(this.state.editingSong);
       if (!song) { this.state.editingSong = null; return this._renderCenter(); }
+      const isDraft = !!draft;
 
       // Preserve scroll + focus across re-renders so actions like
       // "add section" or changing the style don't snap the editor back
@@ -3854,12 +3877,12 @@
 
       c.innerHTML = `
         <div class="center-head">
-          <div class="center-title">Edit Song</div>
+          <div class="center-title">${isDraft ? (song.category === 'hymnal' ? 'New Hymn' : 'New Song') : 'Edit Song'}${isDraft ? ' <span class="draft-tag">DRAFT</span>' : ''}</div>
           <div class="center-meta">${Store.songToSlides(song).length} SLIDE${Store.songToSlides(song).length === 1 ? '' : 'S'}</div>
           <div class="center-actions">
-            <button class="btn btn-sm" id="song-close">${ICONS.x}<span>Close</span></button>
+            <button class="btn btn-sm" id="song-close">${ICONS.x}<span>${isDraft ? 'Discard' : 'Close'}</span></button>
             <button class="btn btn-sm" id="song-add">${ICONS['to-schedule']}<span>Add to Schedule</span></button>
-            <button class="btn btn-sm btn-danger" id="song-del">${ICONS.trash}<span>Delete</span></button>
+            ${isDraft ? '' : `<button class="btn btn-sm btn-danger" id="song-del">${ICONS.trash}<span>Delete</span></button>`}
             <button class="btn btn-sm btn-primary" id="song-save">${ICONS.save}<span>Save</span></button>
           </div>
         </div>
@@ -3984,13 +4007,40 @@
 
       // Header actions
       $('#song-close', c).addEventListener('click', () => {
-        // Drop edit mode but keep the song selected so we land back on its slides view.
+        if (isDraft) {
+          const discard = () => {
+            this.state.draftSong = null;
+            this.state.editingSong = null;
+            this.renderAll();
+            toast('Draft discarded', 'info');
+          };
+          if (this._draftHasContent(song)) {
+            return this._confirm({
+              title: 'Discard draft?',
+              message: `You haven't saved this ${song.category === 'hymnal' ? 'hymn' : 'song'} yet. Discard your changes?`,
+              yesLabel: 'Discard',
+              noLabel: 'Keep editing',
+            }, discard);
+          }
+          return discard();
+        }
+        // Existing song — drop edit mode but keep the song selected so we land back on its slides view.
         this.state.activeSongId = this.state.editingSong;
         this.state.editingSong = null;
         this.renderAll();
       });
-      $('#song-add', c).addEventListener('click', () => this.addSongToSchedule(song.id));
-      $('#song-del', c).addEventListener('click', () => {
+      $('#song-add', c).addEventListener('click', () => {
+        // Pressing "Add to Schedule" on a draft is a strong signal of intent,
+        // so persist the draft first, then queue it.
+        if (isDraft) {
+          delete song._isDraft;
+          this.state.draftSong = null;
+          Store.saveSong(song);
+        }
+        this.addSongToSchedule(song.id);
+      });
+      const delBtn = $('#song-del', c);
+      if (delBtn) delBtn.addEventListener('click', () => {
         const noun = (song.category === 'hymnal') ? 'hymn' : 'song';
         this._confirm({
           title: `Delete ${noun}?`,
@@ -4174,6 +4224,13 @@
     },
 
     _saveSong(song) {
+      // Promote a draft into the real library on first save.
+      if (song._isDraft) {
+        delete song._isDraft;
+        if (this.state.draftSong && this.state.draftSong.id === song.id) {
+          this.state.draftSong = null;
+        }
+      }
       Store.saveSong(song);
       // Propagate title/slide updates to any existing schedule entries for this song
       let changed = false;
