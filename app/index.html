@@ -18,6 +18,42 @@
       navigator.serviceWorker.register('sw.js').catch(() => {});
     });
   }
+
+  // Capture the install prompt so we can (a) auto-fire it when the user
+  // arrived via the landing page's "Download the App" CTA (?install=1)
+  // and (b) expose a window.__pawInstall() for any in-app install button.
+  (function () {
+    let deferred = null;
+    const params = new URLSearchParams(location.search);
+    const wantsInstall = params.get('install') === '1';
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferred = e;
+      if (wantsInstall) fire();
+    });
+
+    window.addEventListener('appinstalled', () => {
+      deferred = null;
+      if (wantsInstall) {
+        try {
+          params.delete('install');
+          const q = params.toString();
+          history.replaceState(null, '', location.pathname + (q ? '?' + q : '') + location.hash);
+        } catch (_) {}
+      }
+    });
+
+    async function fire() {
+      if (!deferred) return false;
+      const p = deferred; deferred = null;
+      try { p.prompt(); await p.userChoice; } catch (_) {}
+      return true;
+    }
+
+    window.__pawInstall = fire;
+    window.__pawCanInstall = () => !!deferred;
+  })();
 </script>
 </head>
 <body>
