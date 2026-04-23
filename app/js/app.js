@@ -2532,6 +2532,16 @@
       });
     },
 
+    // True when the Now Playing music stage is what the projector would
+    // render right now (nothing higher priority is occupying the stage).
+    // When false, music state changes only update audio + the mini-player;
+    // they don't touch the projector so the operator's slide doesn't flash.
+    _musicStageIsLive() {
+      return !this.state.liveDeck
+        && !this.state.countdownSlide
+        && this.state.liveScheduleIdx < 0;
+    },
+
     async _toggleMusicPlayback(id, btn) {
       const rowBtns = $$('.lib-music-play');
       // If this track is already playing — pause it.
@@ -2545,7 +2555,7 @@
         // or the mini-player).
         const rb = document.querySelector(`[data-music-play="${id}"]`);
         if (rb) rb.innerHTML = ICONS.play;
-        this._pushLive();
+        if (this._musicStageIsLive()) this._pushLive();
         this._renderMonitors();
         this._renderMusicPlayer();
         return;
@@ -2557,7 +2567,7 @@
         if (this.state.musicSlide) this.state.musicSlide = { ...this.state.musicSlide, paused: false };
         const rb = document.querySelector(`[data-music-play="${id}"]`);
         if (rb) rb.innerHTML = ICONS.pause;
-        this._pushLive();
+        if (this._musicStageIsLive()) this._pushLive();
         this._renderMonitors();
         this._renderMusicPlayer();
         return;
@@ -2583,10 +2593,11 @@
       try { await audio.play(); } catch (_) {}
       rowBtns.forEach(b => { b.innerHTML = ICONS.play; });
       if (btn) btn.innerHTML = ICONS.pause;
-      // Elevate the Now Playing stage so it shows on both the operator's
-      // Live Output monitor and the projector window.
+      // Register the Now Playing slide. It becomes the projector stage
+      // only when nothing higher priority (schedule, countdown, deck)
+      // is live — otherwise the audio plays behind the current slide.
       this.state.musicSlide = { id: `music_${id}`, kind: 'music', name: track.name || 'Music', paused: false };
-      this._pushLive();
+      if (this._musicStageIsLive()) this._pushLive();
       this._renderMonitors();
       this._renderMusicPlayer();
     },
@@ -2604,10 +2615,12 @@
       this._musicAudioUrl = null;
       this._musicTrackName = null;
       if (!opts.keepStage) {
+        // Only push to the projector if the music stage was the visible
+        // thing; otherwise the projector is already showing a schedule
+        // item / deck / countdown and needn't be touched.
+        const wasLive = this._musicStageIsLive();
         this.state.musicSlide = null;
-        // _pushLive will recompute the live slide — so if there's a schedule
-        // item still live, it quietly comes back. Otherwise the stage clears.
-        this._pushLive();
+        if (wasLive) this._pushLive();
         this._renderMonitors();
         // Reset any row play buttons back to the play icon.
         $$('.lib-music-play').forEach(b => { b.innerHTML = ICONS.play; });
@@ -5110,20 +5123,26 @@ Second line here
     },
 
     _getLiveSlide() {
-      // Music library playback takes over the stage just like countdown does.
-      if (this.state.musicSlide) return this.state.musicSlide;
-      // Out-of-band paged deck (multi-slide birthday, etc.) takes top priority.
+      // Priority (highest to lowest):
+      //   liveDeck  — paged decks (multi-slide birthday, etc.)
+      //   countdown — active countdown timer
+      //   schedule  — currently-live schedule item
+      //   music     — Now Playing fills the screen ONLY when nothing
+      //               higher is on; audio still plays behind other slides.
       const d = this.state.liveDeck;
       if (d && d.slides && d.slides.length) {
         const i = clamp(d.idx || 0, 0, d.slides.length - 1);
         return d.slides[i];
       }
-      // Countdown slides live outside the schedule and take precedence.
       if (this.state.countdownSlide) return this.state.countdownSlide;
       const idx = this.state.liveScheduleIdx;
-      if (idx < 0) return null;
-      const item = this.state.schedule[idx];
-      return item && item.slides[this.state.currentSlideIdx] || null;
+      if (idx >= 0) {
+        const item = this.state.schedule[idx];
+        const slide = item && item.slides[this.state.currentSlideIdx];
+        if (slide) return slide;
+      }
+      if (this.state.musicSlide) return this.state.musicSlide;
+      return null;
     },
 
     _getPreviewSlide() {
@@ -5270,7 +5289,10 @@ Second line here
       this.state.countdownSlide = null;
       this.state.liveDeck = null;
       Projector.setBlackout(false);
-      Projector.clear();
+      // If music is still playing, fall back to the Now Playing stage
+      // instead of a blank screen. Otherwise clear the projector.
+      if (this.state.musicSlide) this._pushLive();
+      else Projector.clear();
       this.renderAll();
     },
 
